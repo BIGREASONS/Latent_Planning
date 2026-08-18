@@ -246,6 +246,31 @@ Linear vs Transformer & $0.537$ & $0.6413$ & $0.8375$ & $d=0.438$ \\
 \end{tabular}
 \end{table}
 
+\subsection{Follow-Up Validation with Larger Teachers}
+
+To assess whether the observed geometry--semantics mismatch was confined to the TinyLlama setting, we conducted follow-up experiments with three additional 7B-parameter teachers: Qwen 2.5, Mistral 7B, and DeepSeek-R1-Distill-Qwen-7B. These experiments were new training runs conducted after the primary Phase 3 study as a follow-up validation stage. They used an MLP transition and were not repeated across the three-seed, three-architecture Phase 3 protocol. Nevertheless, all three Countdown runs exhibited high cosine similarity ($>0.95$) alongside substantial corresponding Oracle Gaps and little or negative semantic advancement relative to the identity baseline. These results provide preliminary evidence that the observed geometry--semantics mismatch is not confined to the TinyLlama setting.
+
+\begin{table}[H]
+\centering
+\caption{Exploratory Validation with 7B Teachers (Depth 1)}
+\label{tab:larger_teachers}
+\begin{tabular}{llrrr}
+\toprule
+Teacher & Domain & Cosine & Oracle Gap\textsuperscript{*} & Semantic Gain\textsuperscript{*} \\
+\midrule
+Qwen 2.5 7B & Countdown & 0.959 & 0.221 & -0.028 \\
+Mistral 7B & Countdown & 0.958 & 0.441 & -0.232 \\
+DeepSeek-R1-Distill-Qwen-7B & Countdown & 0.987 & 0.182 & +0.004 \\
+Qwen 2.5 7B & Game24 & 0.991 & 0.132 & +0.001 \\
+\bottomrule
+\multicolumn{5}{p{0.95\columnwidth}}{\small \textsuperscript{*}Exploratory quantities derived from the earlier evaluation pipeline; not included in the primary Phase 3 statistical analysis.}
+\end{tabular}
+\end{table}
+
+\subsection{Cross-Domain Exploratory Validation}
+
+As a separate cross-domain pilot, we evaluated Qwen 2.5 7B on Game24. The transition achieved cosine similarity of 0.991, while the corresponding semantic gain relative to the identity baseline was approximately +0.001 and the corresponding Oracle Gap was 0.132. This result is consistent with the geometry--semantics mismatch observed on Countdown, although the single-run design and differing protocol prevent statistical generalization.
+
 \section{Discussion}
 
 \subsection{Why Geometry Can Mislead}
@@ -286,7 +311,7 @@ Results generalize across LLMs/tasks & Not tested & Future work \\
 Our evaluation is explicitly bounded:
 \begin{itemize}
     \item \textbf{Small Seed Count:} With $n=3$, inferential statistical power is extremely low.
-    \item \textbf{Single Teacher:} We restrict our experiments to TinyLlama-1.1B. 
+    \item \textbf{Single Teacher:} The primary statistical study is conducted with a frozen 1.1B TinyLlama teacher. Follow-up experiments with Qwen 2.5 7B, Mistral 7B, and DeepSeek-R1-Distill-Qwen-7B exhibited qualitatively similar geometry--semantics discrepancies under an earlier MLP-based evaluation protocol. These results provide preliminary cross-teacher evidence, but do not establish a quantitative scaling law. A controlled teacher-scale study beyond 7B remains an important direction for future work.
     \item \textbf{Single Reasoning Domain:} The study isolates the deductive Countdown task.
     \item \textbf{Probe Dependence:} Semantic evaluation inherently depends on the structure of the chosen linear probes.
     \item \textbf{Transition Objective Dependence:} All evaluated transitions were trained using a geometric MSE objective; the study does not establish whether semantic-aware training objectives would behave differently.
