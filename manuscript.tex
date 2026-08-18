@@ -7,6 +7,7 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage[hidelinks]{hyperref}
 
 \begin{document}
@@ -74,7 +75,7 @@ World models typically utilize a Recurrent State Space Model (RSSM) to forecast 
 \subsection{JEPA and Predictive Representation Learning}
 Joint-Embedding Predictive Architectures (JEPAs) \cite{lecun2022path, assran2023self, bardes2024vjepa} optimize a predictor network to map a latent representation of context to the latent representation of a target, minimizing geometric prediction loss (e.g., $L_2$ distance). JEPA-style objectives emphasize prediction in representation space; such geometric prediction objectives do not, by themselves, establish task-specific semantic correctness. Our work isolates semantic preservation independently of geometric reconstruction.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Evaluation-Dimension Comparison}
 \label{tab:related_work}
@@ -203,7 +204,7 @@ The linear probes successfully decode task-critical information from the frozen 
 \subsection{Architecture-Level Results}
 Table \ref{tab:main_results} reports the performance of the three transition architectures across the audited Phase 3 study. The metrics demonstrate a consistently non-zero Oracle Gap across all evaluated models.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Primary Results (Mean $\pm$ 95\% CI Half-Width)}
 \label{tab:main_results}
@@ -227,7 +228,7 @@ The results provide limited evidence that the tested transitions consistently de
 \subsection{Statistical Analysis}
 We formally tested whether the architecture choice systematically affects the Oracle Gap. The comprehensive statistical tests are reported in Table \ref{tab:stats}. A Welch's ANOVA yields $F(2,3.59)=1.1748$ with $p=0.4050$, which did not provide statistically significant evidence of differences in mean Oracle Gap across architectures. Holm-adjusted pairwise Welch $t$-tests likewise show no statistically significant differences. Although large effect sizes were observed (e.g., Cohen's $d = -1.221$ for MLP vs Transformer), these effect-size estimates are exploratory and should be interpreted cautiously given the very small number of independent seeds. The study does not provide statistically significant evidence of architecture-level differences, and the low seed count ($n=3$) makes the result inconclusive regarding architectural equivalence.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Statistical Tests (Welch ANOVA and Pairwise t-tests)}
 \label{tab:stats}
@@ -260,7 +261,7 @@ We hypothesize a phenomenon we term \textit{representational smoothing}. The tra
 \subsection{Implications for Latent Planning Evaluation}
 The empirical mismatch demonstrates that latent planning models must be evaluated against semantic references (like the Oracle Gap). Relying on representation-level objective functions risks selecting models that are transitions dominated by representation-space inertia rather than capable deductive reasoners.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Summary of Claims and Evidence}
 \label{tab:claims}
@@ -298,20 +299,10 @@ Future work must investigate whether representational smoothing genuinely reorga
 \section{Conclusion}
 We introduced a decoupled evaluation framework for assessing semantic fidelity in latent transition models. Across Countdown experiments with a frozen TinyLlama teacher, Linear, MLP, and Transformer transitions all exhibited substantial Oracle Gaps and generally negative Semantic Gain despite high geometric similarity. Architecture-level differences were not statistically distinguishable under the three-seed design, and the limited sample size prevents claims of equivalence. These findings demonstrate that geometric reconstruction metrics alone are insufficient evidence of semantic state preservation in the evaluated latent-transition setting.
 
-\begin{thebibliography}{00}
-\bibitem{hafner2020dream} D. Hafner, T. Lillicrap, J. Ba, and M. Norouzi, ``Dream to control: Learning behaviors by latent imagination,'' in \textit{ICLR}, 2020.
-\bibitem{schrittwieser2020mastering} J. Schrittwieser et al., ``Mastering atari, go, chess and shogi by planning with a learned model,'' \textit{Nature}, vol. 588, no. 7839, pp. 604--609, 2020.
-\bibitem{belrose2023eliciting} N. Belrose, Z. Furman, L. Logan, C. Pehlevan, and J. Steinhardt, ``Eliciting latent predictions from transformers with the tuned lens,'' \textit{arXiv:2303.08112}, 2023.
-\bibitem{alain2017understanding} G. Alain and Y. Bengio, ``Understanding intermediate layers using linear classifier probes,'' in \textit{ICLR}, 2017.
-\bibitem{lecun2022path} Y. LeCun, ``A path towards autonomous machine intelligence,'' \textit{Open Review}, vol. 62, 2022.
-\bibitem{assran2023self} M. Assran et al., ``Self-supervised learning from images with a joint-embedding predictive architecture,'' in \textit{CVPR}, 2023, pp. 15619--15629.
-\bibitem{bardes2024vjepa} A. Bardes et al., ``V-jepa: Latent video prediction for visual representation learning,'' \textit{arXiv:2404.08471}, 2024.
-\end{thebibliography}
-
 \appendix
 \section*{Final Audited Phase 3 Raw Results}
 Table \ref{tab:raw_results_app} presents the complete set of raw metrics obtained across all nine audited experimental runs in Phase 3. 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Complete Phase 3 Run-Level Metrics}
 \label{tab:raw_results_app}
@@ -331,5 +322,15 @@ Trans. & 44 & -0.0314 & 0.1605 & 0.1920 & 0.947 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{thebibliography}{00}
+\bibitem{hafner2020dream} D. Hafner, T. Lillicrap, J. Ba, and M. Norouzi, ``Dream to control: Learning behaviors by latent imagination,'' in \textit{ICLR}, 2020.
+\bibitem{schrittwieser2020mastering} J. Schrittwieser et al., ``Mastering atari, go, chess and shogi by planning with a learned model,'' \textit{Nature}, vol. 588, no. 7839, pp. 604--609, 2020.
+\bibitem{belrose2023eliciting} N. Belrose, Z. Furman, L. Logan, C. Pehlevan, and J. Steinhardt, ``Eliciting latent predictions from transformers with the tuned lens,'' \textit{arXiv:2303.08112}, 2023.
+\bibitem{alain2017understanding} G. Alain and Y. Bengio, ``Understanding intermediate layers using linear classifier probes,'' in \textit{ICLR}, 2017.
+\bibitem{lecun2022path} Y. LeCun, ``A path towards autonomous machine intelligence,'' \textit{Open Review}, vol. 62, 2022.
+\bibitem{assran2023self} M. Assran et al., ``Self-supervised learning from images with a joint-embedding predictive architecture,'' in \textit{CVPR}, 2023, pp. 15619--15629.
+\bibitem{bardes2024vjepa} A. Bardes et al., ``V-jepa: Latent video prediction for visual representation learning,'' \textit{arXiv:2404.08471}, 2024.
+\end{thebibliography}
 
 \end{document}
