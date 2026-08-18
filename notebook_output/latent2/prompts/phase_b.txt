@@ -1,0 +1,231 @@
+You are the lead research engineer.
+
+Phase A has already been implemented and executed.
+
+Current artifacts:
+
+* coherence_depth.csv
+* coherence_depth.png
+* probe_results.csv
+* phase_a_report.md
+
+Do NOT implement MCTS.
+
+Do NOT implement Retrieval.
+
+Do NOT implement VQ actions.
+
+Do NOT implement policy networks.
+
+Do NOT implement value networks.
+
+Phase B is a diagnostic phase whose purpose is to determine exactly where latent planning fails.
+
+====================================================
+PHASE B GOAL
+============
+
+Determine whether failures originate from:
+
+1. Representation
+2. Dynamics learning
+3. State-space geometry
+4. Action conditioning
+
+====================================================
+PART 1
+ACTION-BLIND TRANSITION BASELINE
+================================
+
+Implement:
+
+T(h_t) -> h_(t+1)
+
+No action input.
+
+Architecture:
+
+Same parameter count as the action-conditioned model.
+
+Train using the same dataset.
+
+Generate:
+
+action_blind_results.csv
+
+Compare:
+
+* MSE
+* cosine similarity
+* coherence depth
+
+against:
+
+T(h_t, a_t)
+
+Generate:
+
+action_blind_comparison.md
+
+Questions:
+
+* Does action conditioning matter?
+* Is the model simply exploiting trajectory autocorrelation?
+
+====================================================
+PART 2
+ORACLE TRANSITION
+=================
+
+Implement Oracle Transition evaluation.
+
+Goal:
+
+Estimate the maximum achievable coherence given the current representation.
+
+Procedure:
+
+Given:
+
+(h_t, a_t)
+
+return the true teacher next state.
+
+Use this only for evaluation.
+
+No training.
+
+Generate:
+
+oracle_coherence.csv
+oracle_coherence.png
+
+Compare:
+
+* Oracle
+* Action-conditioned transition
+* Action-blind transition
+
+====================================================
+PART 3
+INTRINSIC STATE NOISE ANALYSIS
+==============================
+
+Measure hidden-state consistency.
+
+Group hidden states by symbolic task state.
+
+Examples:
+
+* same remaining numbers
+* same distance-to-solution
+* same operation count
+
+For each group:
+
+Measure:
+
+* within-cluster variance
+* between-cluster variance
+
+Generate:
+
+state_noise.csv
+
+Generate visualizations:
+
+state_noise.png
+
+Questions:
+
+* Do identical symbolic states map to similar hidden states?
+* Is hidden-state variance larger than transition error?
+
+====================================================
+PART 4
+LAYER SWEEP
+===========
+
+Evaluate:
+
+Layer 4
+Layer 8
+Layer 12
+
+For each layer:
+
+Compute:
+
+* probe performance
+* oracle coherence
+* intrinsic noise
+
+Generate:
+
+layer_comparison.csv
+
+Columns:
+
+layer
+oracle_horizon
+noise_ratio
+probe_accuracy
+
+Generate:
+
+layer_comparison.png
+
+Question:
+
+Which layer provides the most planning-friendly representation?
+
+====================================================
+PART 5
+MASTER PHASE B REPORT
+=====================
+
+Generate:
+
+reports/phase_b_report.md
+
+Must answer:
+
+1. Does action information matter?
+
+2. Are hidden states internally consistent?
+
+3. Which layer is best?
+
+4. Is the dominant bottleneck:
+
+   * representation
+   * dynamics learning
+   * state geometry
+   * action utilization
+
+5. Should Retrieval be implemented?
+
+6. Should MCTS be implemented?
+
+Recommendations must be evidence-based.
+
+====================================================
+SUCCESS CRITERIA
+================
+
+Produce:
+
+* action_blind_results.csv
+* oracle_coherence.csv
+* state_noise.csv
+* layer_comparison.csv
+
+and
+
+phase_b_report.md
+
+The objective is not to improve performance.
+
+The objective is to identify the bottleneck preventing latent planning.
+
+Stop after Phase B.

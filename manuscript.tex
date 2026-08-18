@@ -117,9 +117,9 @@ P^*(h_{t+1}) = \mathcal{P}(h_{t+1})
 The predicted-state semantic accuracy is given by $\mathcal{P}(\hat h_{t+1})$.
 
 \subsection{Semantic Gain}
-Semantic Gain measures the transition model's ability to inject valid action-conditioned semantics beyond simply passing through the current state. We define a blind baseline, $\hat h_{blind} = \mathcal{T}_\phi(h_t, \mathbf{0})$. Semantic Gain is defined as:
+Semantic Gain measures the transition model's ability to inject valid action-conditioned semantics beyond simply passing through the current state. We define the identity baseline as the task information already decodable from the source state $h_t$. Semantic Gain is defined as:
 \begin{equation}
-SG = \text{Accuracy}(\mathcal{P}(\hat h_{t+1})) - \text{Accuracy}(\mathcal{P}(\hat h_{blind}))
+SG = \text{Accuracy}(\mathcal{P}(\hat h_{t+1})) - \text{Accuracy}(\mathcal{P}(h_t))
 \end{equation}
 
 \subsection{Oracle Gap}
@@ -188,7 +188,7 @@ Transition models were trained on the MSE loss objective to predict $h_{t+1}$ us
 To ensure generalization, datasets were explicitly deduplicated to prevent test-set tasks or identical reasoning sub-trajectories from leaking into the training corpus.
 
 \subsection{Statistical Analysis}
-Due to the limited number of seeds ($n=3$ per architecture), formal hypothesis testing was performed using Welch's ANOVA and pairwise Welch $t$-tests with Holm-Bonferroni multiple comparison correction. All reported confidence intervals utilize the $t$-distribution.
+Due to the limited number of seeds ($n=3$ per architecture), formal hypothesis testing was performed using Welch's ANOVA and pairwise Welch $t$-tests with Holm-Bonferroni multiple comparison correction. All reported confidence intervals utilize the $t$-distribution. Because the same random seeds (42, 43, 44) were evaluated across architectures, we additionally performed a seed-blocked sensitivity analysis (paired testing) to ensure robustness against initialization variance.
 
 \section{Results}
 
@@ -227,7 +227,7 @@ A central finding is the stark divergence between geometric reconstruction and s
 The results provide limited evidence that the tested transitions consistently derive semantic benefit from the supplied action. The True Action condition performs comparably to the Shuffled and Constant control settings, with negative SG in almost all evaluations.
 
 \subsection{Statistical Analysis}
-We formally tested whether the architecture choice systematically affects the Oracle Gap. The comprehensive statistical tests are reported in Table \ref{tab:stats}. A Welch's ANOVA yields $F(2,3.59)=1.1748$ with $p=0.4050$, which did not provide statistically significant evidence of differences in mean Oracle Gap across architectures. Holm-adjusted pairwise Welch $t$-tests likewise show no statistically significant differences. Although large effect sizes were observed (e.g., Cohen's $d = -1.221$ for MLP vs Transformer), these effect-size estimates are exploratory and should be interpreted cautiously given the very small number of independent seeds. The study does not provide statistically significant evidence of architecture-level differences, and the low seed count ($n=3$) makes the result inconclusive regarding architectural equivalence.
+We formally tested whether the architecture choice systematically affects the Oracle Gap. The comprehensive statistical tests are reported in Table \ref{tab:stats}. A Welch's ANOVA yields $F(2,3.59)=1.1748$ with $p=0.4050$, which did not provide statistically significant evidence of differences in mean Oracle Gap across architectures. Holm-adjusted pairwise Welch $t$-tests likewise show no statistically significant differences. To verify whether initialization variance masked architecture effects, we additionally conducted a paired sensitivity analysis blocking by random seed; this approach also yielded no statistically significant architecture-level differences. Although large effect sizes were observed (e.g., Cohen's $d = -1.221$ for MLP vs Transformer), these effect-size estimates are exploratory and should be interpreted cautiously given the very small number of independent seeds. The study does not provide statistically significant evidence of architecture-level differences, and the low seed count ($n=3$) makes the result inconclusive regarding architectural equivalence.
 
 \begin{table}[H]
 \centering

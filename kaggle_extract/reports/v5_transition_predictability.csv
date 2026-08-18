@@ -1,0 +1,2 @@
+loss,top1_accuracy,predictive_entropy_nats,predictive_perplexity,chance_accuracy
+1.282549963775817,0.43132050431320507,1.2936736311276542,3.6058227297722847,0.03125

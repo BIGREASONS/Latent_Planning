@@ -1,0 +1,36 @@
+# tensors
+*.pt
+*.pth
+*.bin
+
+# numpy
+*.npy
+*.npz
+
+# datasets
+data/raw/
+data/cache/
+*.jsonl
+
+# checkpoints
+checkpoints/
+checkpoints_qwen/
+
+# logs
+scratch_logs/
+*.log
+
+# pycache
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# vscode
+.vscode/
+
+# outputs
+reports_qwen/raw/
+reports/trajectories/
+reports/discrete_trajectories/
+reports/scrubbed/

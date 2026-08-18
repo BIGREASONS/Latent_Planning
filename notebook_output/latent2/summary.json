@@ -1,0 +1,291 @@
+{
+  "pca_metrics": [
+    {
+      "Removed PCs": 0,
+      "Depth Acc": 0.99967585089141,
+      "Rem Nums (A) Exact": 0.7928687196110211,
+      "Rem Nums (A) Hamming": 0.936061588330632,
+      "Next Op (Probe C)": 0.499837925445705
+    },
+    {
+      "Removed PCs": 1,
+      "Depth Acc": 0.9983792544570502,
+      "Rem Nums (A) Exact": 0.7964343598055106,
+      "Rem Nums (A) Hamming": 0.936871961102107,
+      "Next Op (Probe C)": 0.4959481361426256
+    },
+    {
+      "Removed PCs": 2,
+      "Depth Acc": 0.9980551053484604,
+      "Rem Nums (A) Exact": 0.7961102106969206,
+      "Rem Nums (A) Hamming": 0.9371150729335496,
+      "Next Op (Probe C)": 0.4910858995137763
+    },
+    {
+      "Removed PCs": 5,
+      "Depth Acc": 0.9231766612641816,
+      "Rem Nums (A) Exact": 0.767260940032415,
+      "Rem Nums (A) Hamming": 0.926256077795786,
+      "Next Op (Probe C)": 0.4956239870340356
+    },
+    {
+      "Removed PCs": 10,
+      "Depth Acc": 0.9037277147487844,
+      "Rem Nums (A) Exact": 0.7163695299837926,
+      "Rem Nums (A) Hamming": 0.9076985413290114,
+      "Next Op (Probe C)": 0.4914100486223663
+    },
+    {
+      "Removed PCs": 20,
+      "Depth Acc": 0.8739059967585089,
+      "Rem Nums (A) Exact": 0.6891410048622366,
+      "Rem Nums (A) Hamming": 0.8949756888168557,
+      "Next Op (Probe C)": 0.4807131280388979
+    }
+  ],
+  "retrieval": [
+    {
+      "Removed PCs": 0,
+      "Retrieval Top-1": 0.2285714285714285,
+      "Retrieval Top-5": 0.3571428571428571,
+      "Retrieval Top-10": 0.3714285714285714,
+      "Top-1 Gain": 1.0
+    },
+    {
+      "Removed PCs": 1,
+      "Retrieval Top-1": 0.2285714285714285,
+      "Retrieval Top-5": 0.3571428571428571,
+      "Retrieval Top-10": 0.3714285714285714,
+      "Top-1 Gain": 1.0
+    },
+    {
+      "Removed PCs": 2,
+      "Retrieval Top-1": 0.2285714285714285,
+      "Retrieval Top-5": 0.3571428571428571,
+      "Retrieval Top-10": 0.3714285714285714,
+      "Top-1 Gain": 1.0
+    },
+    {
+      "Removed PCs": 5,
+      "Retrieval Top-1": 0.2428571428571428,
+      "Retrieval Top-5": 0.3571428571428571,
+      "Retrieval Top-10": 0.3714285714285714,
+      "Top-1 Gain": 1.0625
+    },
+    {
+      "Removed PCs": 10,
+      "Retrieval Top-1": 0.2428571428571428,
+      "Retrieval Top-5": 0.3428571428571428,
+      "Retrieval Top-10": 0.3714285714285714,
+      "Top-1 Gain": 1.0625
+    },
+    {
+      "Removed PCs": 20,
+      "Retrieval Top-1": 0.2428571428571428,
+      "Retrieval Top-5": 0.3571428571428571,
+      "Retrieval Top-10": 0.3714285714285714,
+      "Top-1 Gain": 1.0625
+    }
+  ],
+  "controls": [
+    {
+      "control": "PERMUTED null",
+      "Depth Acc": 0.3377633711507293,
+      "Rem Nums (A) Exact": 0.0470016207455429,
+      "Next Op (Probe C)": 0.3059967585089141,
+      "Retrieval Top-1": 0.0,
+      "Retrieval Top-5": 0.0
+    },
+    {
+      "control": "Raw-operand baseline",
+      "Depth Acc": 0.3241491085899514,
+      "Rem Nums (A) Exact": 0.4593192868719611,
+      "Next Op (Probe C)": 0.3912479740680713,
+      "Retrieval Top-1": 0.0142857142857142,
+      "Retrieval Top-5": 0.1428571428571428
+    }
+  ],
+  "geometry": [
+    {
+      "Removed PCs": 0,
+      "Within/Between Ratio": 80.868706
+    },
+    {
+      "Removed PCs": 1,
+      "Within/Between Ratio": 58.000175
+    },
+    {
+      "Removed PCs": 2,
+      "Within/Between Ratio": 58.19764
+    },
+    {
+      "Removed PCs": 5,
+      "Within/Between Ratio": 143.47632
+    },
+    {
+      "Removed PCs": 10,
+      "Within/Between Ratio": 175.5467
+    },
+    {
+      "Removed PCs": 20,
+      "Within/Between Ratio": 245.13457
+    }
+  ],
+  "probe_results": [
+    {
+      "probe": "A:remaining_numbers",
+      "accuracy": 0.6071428571428572,
+      "f1": 0.0,
+      "auc": NaN,
+      "exact_accuracy": 0.1904761904761904
+    },
+    {
+      "probe": "B:distance_to_solution",
+      "accuracy": 0.4126984126984127,
+      "f1": 0.3509716732542819,
+      "auc": 0.7382150725402891,
+      "exact_accuracy": NaN
+    },
+    {
+      "probe": "C:next_operation",
+      "accuracy": 0.365079365079365,
+      "f1": 0.3529395657055231,
+      "auc": 0.5353142601102298,
+      "exact_accuracy": NaN
+    },
+    {
+      "probe": "D:reachable_within_2",
+      "accuracy": 0.6666666666666666,
+      "f1": 0.7692307692307693,
+      "auc": 0.7858695652173913,
+      "exact_accuracy": NaN
+    }
+  ],
+  "coherence": [
+    {
+      "depth": 1,
+      "mse": 4.135379135608673,
+      "cosine_similarity": 0.4348915562033653,
+      "operator_accuracy": 0.5,
+      "teacher_operator_accuracy": 0.15,
+      "state_probe_accuracy": 0.6,
+      "teacher_state_probe_accuracy": 0.625,
+      "dist_probe_accuracy": NaN,
+      "teacher_dist_probe_accuracy": NaN,
+      "reach_probe_accuracy": NaN,
+      "teacher_reach_probe_accuracy": NaN,
+      "identity_mse": 4.742670178413391,
+      "identity_cosine_similarity": 0.3703721240162849,
+      "identity_operator_accuracy": 0.35,
+      "identity_state_probe_accuracy": 0.575,
+      "identity_dist_probe_accuracy": NaN,
+      "identity_reach_probe_accuracy": NaN,
+      "n_samples": 20,
+      "dynamics_gain": 1.1468525672955818
+    },
+    {
+      "depth": 2,
+      "mse": 4.305238723754883,
+      "cosine_similarity": 0.447563886642456,
+      "operator_accuracy": 0.4117647058823529,
+      "teacher_operator_accuracy": 0.5882352941176471,
+      "state_probe_accuracy": 0.4625,
+      "teacher_state_probe_accuracy": 0.475,
+      "dist_probe_accuracy": NaN,
+      "teacher_dist_probe_accuracy": NaN,
+      "reach_probe_accuracy": NaN,
+      "teacher_reach_probe_accuracy": NaN,
+      "identity_mse": 4.787666034698487,
+      "identity_cosine_similarity": 0.357057437300682,
+      "identity_operator_accuracy": 0.3529411764705882,
+      "identity_state_probe_accuracy": 0.4625,
+      "identity_dist_probe_accuracy": NaN,
+      "identity_reach_probe_accuracy": NaN,
+      "n_samples": 20,
+      "dynamics_gain": 1.11205587933643
+    },
+    {
+      "depth": 3,
+      "mse": 5.011441875906551,
+      "cosine_similarity": 0.4434884032782386,
+      "operator_accuracy": 0.1666666666666666,
+      "teacher_operator_accuracy": 0.5,
+      "state_probe_accuracy": 0.3823529411764705,
+      "teacher_state_probe_accuracy": 0.4558823529411764,
+      "dist_probe_accuracy": NaN,
+      "teacher_dist_probe_accuracy": NaN,
+      "reach_probe_accuracy": NaN,
+      "teacher_reach_probe_accuracy": NaN,
+      "identity_mse": 4.809640688054702,
+      "identity_cosine_similarity": 0.3557985214626087,
+      "identity_operator_accuracy": 0.1666666666666666,
+      "identity_state_probe_accuracy": 0.4117647058823529,
+      "identity_dist_probe_accuracy": NaN,
+      "identity_reach_probe_accuracy": NaN,
+      "n_samples": 17,
+      "dynamics_gain": 0.9597319109252676
+    }
+  ],
+  "coherence_oracle": [
+    {
+      "depth": 1,
+      "mse": 0.0,
+      "cosine_similarity": 1.0000000238418578,
+      "operator_accuracy": 0.15,
+      "teacher_operator_accuracy": 0.15,
+      "state_probe_accuracy": 0.625,
+      "teacher_state_probe_accuracy": 0.625,
+      "dist_probe_accuracy": NaN,
+      "teacher_dist_probe_accuracy": NaN,
+      "reach_probe_accuracy": NaN,
+      "teacher_reach_probe_accuracy": NaN,
+      "identity_mse": 4.742670178413391,
+      "identity_cosine_similarity": 0.3703721240162849,
+      "identity_operator_accuracy": 0.35,
+      "identity_state_probe_accuracy": 0.575,
+      "identity_dist_probe_accuracy": NaN,
+      "identity_reach_probe_accuracy": NaN,
+      "n_samples": 20
+    },
+    {
+      "depth": 2,
+      "mse": 0.0,
+      "cosine_similarity": 0.9999999970197676,
+      "operator_accuracy": 0.5882352941176471,
+      "teacher_operator_accuracy": 0.5882352941176471,
+      "state_probe_accuracy": 0.475,
+      "teacher_state_probe_accuracy": 0.475,
+      "dist_probe_accuracy": NaN,
+      "teacher_dist_probe_accuracy": NaN,
+      "reach_probe_accuracy": NaN,
+      "teacher_reach_probe_accuracy": NaN,
+      "identity_mse": 4.787666034698487,
+      "identity_cosine_similarity": 0.357057437300682,
+      "identity_operator_accuracy": 0.3529411764705882,
+      "identity_state_probe_accuracy": 0.4625,
+      "identity_dist_probe_accuracy": NaN,
+      "identity_reach_probe_accuracy": NaN,
+      "n_samples": 20
+    },
+    {
+      "depth": 3,
+      "mse": 0.0,
+      "cosine_similarity": 0.9999999684445998,
+      "operator_accuracy": 0.5,
+      "teacher_operator_accuracy": 0.5,
+      "state_probe_accuracy": 0.4558823529411764,
+      "teacher_state_probe_accuracy": 0.4558823529411764,
+      "dist_probe_accuracy": NaN,
+      "teacher_dist_probe_accuracy": NaN,
+      "reach_probe_accuracy": NaN,
+      "teacher_reach_probe_accuracy": NaN,
+      "identity_mse": 4.809640688054702,
+      "identity_cosine_similarity": 0.3557985214626087,
+      "identity_operator_accuracy": 0.1666666666666666,
+      "identity_state_probe_accuracy": 0.4117647058823529,
+      "identity_dist_probe_accuracy": NaN,
+      "identity_reach_probe_accuracy": NaN,
+      "n_samples": 17
+    }
+  ]
+}

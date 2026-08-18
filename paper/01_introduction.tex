@@ -1,0 +1,18 @@
+\section{Introduction}
+
+Latent planning is an attractive paradigm because reasoning and search could theoretically occur entirely in the latent space of an autoregressive Large Language Model (LLM), bypassing the computational bottleneck of sequential token generation.
+
+However, existing work evaluates learned latent transitions primarily using geometric reconstruction metrics, such as Mean Squared Error (MSE) or cosine similarity against the true subsequent teacher state. It remains fundamentally unclear whether these geometric metrics reliably reflect semantic transition quality---that is, whether the predicted latent states actually preserve the reasoning information required to successfully solve the task.
+
+In this work, we develop an evaluation methodology that reveals important failure modes of latent transition models. We introduce an evaluation framework that rigorously separates the intrinsic representation quality of the frozen LLM from the transition capabilities of the learned dynamics model. We establish an empirical ``Oracle Ceiling'' by probing the teacher states directly, and evaluate transition models by measuring their ``Oracle Gap'' and ``Semantic Gain'' over unconditioned blind transitions.
+
+Across multiple models, tasks, and transition architectures, we find that geometric similarity can substantially overestimate semantic correctness. Our results indicate that while parameter-matched linear, MLP, and Transformer models achieve nearly identical geometric reconstruction, their ability to preserve task-relevant semantic information diverges significantly.
+
+Our core contributions are:
+\begin{enumerate}
+    \item \textbf{Decoupled Evaluation Framework}: We introduce an evaluation methodology that separates representation quality from transition quality using an Oracle ceiling, an Identity baseline, and Semantic Gain/Oracle Gap metrics across distinct action-control ablations (Blind, Constant, Shuffled, and True Action).
+    \item \textbf{Geometric vs Semantic Mismatch}: We provide empirical evidence that geometric reconstruction metrics alone can fail to reflect semantic transition quality.
+    \item \textbf{Controlled Architecture Comparison}: We evaluate parameter-matched Linear, MLP, and Transformer transitions to demonstrate differences in semantic capacity that are invisible to geometric metrics.
+    \item \textbf{Action-Control Ablations}: We introduce a suite of ablations to rigorously test whether transition models genuinely exploit structured action information or merely learn positional dynamics.
+    \item \textbf{Representational Smoothing Observation}: We observe that learned transitions may produce representations that are \textit{more linearly decodable} than teacher states under weak probes, motivating future work on semantic-aware optimization objectives and representational smoothing.
+\end{enumerate}

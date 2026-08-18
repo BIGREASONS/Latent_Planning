@@ -1,0 +1,51 @@
+# Version 5 — Discrete State Discovery configuration.
+#
+# Components C1-C6 and C9 consume the cached trajectory files produced by the
+# (already-built) Phase A pipeline:
+#   <reports_dir>/trajectories/{train,val,test}.pt
+# C7 (permutation robustness) and C8 (cross-domain transfer) need their own
+# data extraction — see V5_READINESS.md for the full Kaggle execution plan.
+#
+# Everything is repo-relative so the same config runs locally and on Kaggle
+# (point --reports_dir / --out_dir at /kaggle/working/reports on Kaggle).
+
+experiment_name: "v5_discrete_states"
+
+paths:
+  reports_dir: "reports"          # holds trajectories/ and receives v5_* outputs
+  checkpoints_dir: "checkpoints"  # vq_state.pt etc.
+  discrete_dir: "reports/discrete_trajectories"  # encoded code trajectories
+
+# C1 — VQ State Quantizer
+vq:
+  num_codes: 256              # codebook cardinality (state-space size)
+  commitment_cost: 0.25       # weight on ||sg(z_q) - h||^2
+  ema_decay: 0.99             # EMA codebook update decay
+  lr: 0.0003                  # (no-op for pure-EMA VQ; reserved for encoder nets)
+  epochs: 50
+  batch_size: 256
+
+# C3 — Discrete transition predictability (action-blind MLP)
+discrete_transition:
+  embed_dim: 32
+  hidden_dim: 128
+  lr: 0.001
+  epochs: 30
+  batch_size: 256
+
+# C9 — Discrete rollout coherence
+rollout:
+  max_depth: 8                # 0 => dynamic (95th percentile of trajectory lengths)
+
+# C7 — Permutation robustness (multi-solution Countdown)
+multi_solution:
+  num_problems: 2000
+  solutions_per_problem: 4
+
+# C8 — Cross-domain transfer
+transfer:
+  num_algebra: 2000
+  num_logic: 2000
+  num_graph: 2000
+
+seed: 0

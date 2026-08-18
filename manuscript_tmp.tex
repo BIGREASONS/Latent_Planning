@@ -1,0 +1,289 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+
+\begin{document}
+
+\title{When Geometry Misleads: Evaluating Semantic Fidelity in Latent Transition Models for LLM Reasoning\\
+\thanks{This research received no external funding.}
+}
+
+\author{\IEEEauthorblockN{Vaibhav Singh}
+\IEEEauthorblockA{\textit{School of Computer Science Engineering} \\
+\textit{VIT Bhopal University}\\
+Madhya Pradesh, India \\
+Email: [INSERT EMAIL] \\
+ORCID: [INSERT ORCID] \\
+GitHub: [INSERT GITHUB]
+}
+}
+
+\maketitle
+
+\begin{abstract}
+Latent reasoning seeks to perform intermediate computation directly in the hidden-state space of a language model, potentially reducing the need for repeated autoregressive decoding. However, evaluating whether a predicted latent state represents the \textit{correct next reasoning state} remains challenging. Standard geometric objectives such as cosine similarity or mean-squared error measure proximity in representation space, but proximity alone does not establish semantic correctness.
+
+We introduce \textbf{LatentBench}, a framework for evaluating semantic fidelity in latent transition models using a frozen language-model teacher, task-level representation probes, oracle transitions, and action-control ablations. The framework separates geometric reconstruction from semantic state advancement through \textbf{Semantic Gain} and \textbf{Oracle Gap}, while simultaneously tracking cosine similarity, mean-centered cosine similarity, mean-squared error, and probe accuracy over multi-step rollouts.
+
+We evaluate Linear, MLP, and Transformer transition models on the Countdown task using a frozen TinyLlama teacher, with three independent seeds per architecture. Across the nine audited experimental conditions, all three architectures exhibit substantial Oracle Gaps while maintaining high raw cosine similarity. Mean Oracle Gap is 0.1944 for Linear, 0.1788 for MLP, and 0.1860 for Transformer. True Action Semantic Gain is generally negative across architectures, indicating limited semantic advancement despite strong geometric proximity to the current representation.
+
+A Welch's ANOVA does not detect a statistically significant architecture effect on Oracle Gap ($F(2,3.59)=1.1748, p=0.4050$). Pairwise Welch tests with Holm correction likewise do not reach statistical significance. Because only three seeds are available per architecture, these results should be interpreted as \textbf{inconclusive with respect to fine-grained architectural differences rather than as evidence of equivalence}.
+
+Our results demonstrate that, in the evaluated Countdown and TinyLlama setting, geometric similarity alone can substantially overstate the semantic fidelity of latent transitions. The findings motivate evaluation protocols that explicitly measure task-relevant semantic state preservation rather than relying solely on representation-level reconstruction metrics.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Latent Reasoning, Representation Learning, World Models, Mechanistic Interpretability, Joint-Embedding Predictive Architecture (JEPA), Linear Probing
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Large language models perform reasoning through a sequence of internal computations that ultimately produce an autoregressive sequence of tokens. An appealing alternative is to perform some of this computation directly in the model's latent representation space. Instead of repeatedly invoking the full language model to generate intermediate reasoning states, a learned transition model could attempt to advance a hidden representation from one reasoning state to the next. Such latent transitions could potentially provide a more compact mechanism for multi-step computation while avoiding explicit token-level intermediate generation.
+
+This approach raises a fundamental evaluation question: \textbf{when a transition model predicts a new latent state, how can we determine whether that state actually represents the correct next step of reasoning?} A predicted representation may be numerically close to its input while failing to encode the semantic change required by the task. Consequently, evaluating latent transitions exclusively through geometric reconstruction metrics such as cosine similarity or mean-squared error may provide an incomplete picture of their actual reasoning behavior.
+
+This distinction becomes particularly important in high-dimensional language-model representation spaces. Representations can exhibit substantial local similarity even when their task-relevant content differs. A transition model that changes the latent state only minimally may therefore obtain a high cosine similarity score without successfully advancing the underlying reasoning process. Conversely, a semantically meaningful transition need not necessarily correspond to the largest possible geometric displacement. An evaluation methodology therefore requires a mechanism for distinguishing \textbf{representation proximity} from \textbf{semantic state preservation}.
+
+We address this problem with \textbf{LatentBench}, an evaluation framework designed to measure semantic fidelity during latent-state transitions. Rather than treating geometric reconstruction as a sufficient objective, LatentBench introduces an oracle-based semantic reference and evaluates predicted states through task-relevant representation probes. The framework measures \textbf{Semantic Gain}, which captures semantic advancement relative to the relevant baseline, and \textbf{Oracle Gap}, which quantifies the difference between the semantic behavior of a learned transition and the corresponding oracle transition. Action-conditioned, shuffled-action, constant-action, and action-blind controls further test whether a transition model meaningfully responds to the action supplied to it. These semantic measurements are evaluated alongside cosine similarity, mean-centered cosine similarity, mean-squared error, and probe accuracy.
+
+We use this framework to study three transition-model families---Linear, MLP, and Transformer---operating over representations produced by a frozen TinyLlama teacher on the Countdown task. The empirical study uses 5,000 training problems, 500 validation problems, and 1,000 test problems, with three independent random seeds (42, 43, and 44) for each architecture. This produces nine audited architecture--seed conditions. The resulting experiments allow us to examine both the absolute semantic fidelity of latent transitions and whether increasing transition-model capacity changes their behavior.
+
+The results reveal a consistent geometry--semantics discrepancy. Raw cosine similarity remains high across the evaluated architectures, while True Action Semantic Gain is generally negative and Oracle Gap remains substantial. The mean Oracle Gap is 0.1944 for Linear, 0.1788 for MLP, and 0.1860 for Transformer. Thus, although the more expressive transition models exhibit somewhat different point estimates, the overall semantic gap remains present across all three architectures. A Welch's ANOVA does not identify a statistically significant difference in Oracle Gap across architectures ($F(2,3.59)=1.1748, p=0.4050$), and Holm-corrected pairwise Welch tests likewise do not reach significance. Because each architecture is represented by only three seeds, however, these statistical results are insufficient to establish equivalence between architectures.
+
+The central finding is therefore not that one transition architecture definitively outperforms another. Instead, the experiments demonstrate a more fundamental evaluation issue: \textbf{high geometric fidelity can coexist with poor semantic advancement in latent transition models}. Within the specific TinyLlama--Countdown setting studied here, increasing transition-model capacity from Linear to MLP or Transformer does not by itself eliminate this semantic gap. This observation motivates evaluating latent reasoning systems using semantic, task-relevant criteria in addition to conventional representation-level reconstruction metrics.
+
+\section{Background}
+
+\subsection{Latent Reasoning and Planning}
+Planning in latent spaces has demonstrated immense success in reinforcement learning (RL) and decision-making systems. Architectures like Dreamer \cite{hafner2020dream} and MuZero \cite{schrittwieser2020mastering} simulate future consequences using a learned representation of the environment, bypassing the highly expensive requirement of predicting raw observations (e.g., pixels). Porting these continuous planning principles to language models aims to accelerate reasoning by replacing the autoregressive token-generation loop with operations purely in the continuous vector space of the network's hidden states \cite{belrose2023eliciting}.
+
+\subsection{Representation Geometry}
+The high-dimensional latent spaces of LLMs exhibit complex geometric properties. Metrics such as cosine similarity and Mean Squared Error (MSE) are natural objectives for training transition networks. However, because concepts are often encoded in specific linear subspaces or lower-dimensional manifolds \cite{alain2017understanding}, small perturbations in Euclidean space can drastically alter a representation's decodable semantics if aligned with a sensitive concept vector. Conversely, large geometric perturbations orthogonal to these semantic manifolds may preserve decodable information entirely.
+
+\subsection{Semantic Probing}
+Mechanistic interpretability and representation probing involve fitting lightweight models (e.g., linear classifiers) to hidden states to identify whether and how specific concepts are encoded \cite{nanda2022mechanistic}. By applying probes to both the true teacher state and the predicted latent state, we can analytically quantify semantic information loss and track reasoning progression independently of raw coordinate-level distance.
+
+\section{Related Work}
+
+\subsection{World Models and Latent Planning}
+World models typically utilize a Recurrent State Space Model (RSSM) to forecast latent states \cite{hafner2023mastering}. In these settings, latent predictions are generally grounded by decoder networks that reconstruct the observation or predict scalar rewards, ensuring the latent space remains semantically anchored. In contrast, emerging LLM latent forecasting methods operate without explicit continuous observation decoding, amplifying the risk of representation drift.
+
+\subsection{JEPA and Predictive Representation Learning}
+Joint-Embedding Predictive Architectures (JEPAs) \cite{lecun2022path, assran2023self, bardes2024vjepa, ge2024llmjepa} optimize a predictor network to map a latent representation of context to the latent representation of a target, minimizing geometric prediction loss (e.g., $L_2$ distance). While JEPAs assume that matching geometric coordinates aligns semantics, our work assesses whether this assumption holds for exact reasoning semantics in LLM embeddings. We demonstrate that parameter-matched predictors can achieve nearly identical geometric prediction losses while differing markedly in task-critical semantic preservation.
+
+\subsection{Latent Reasoning in LLMs}
+Recent work explores bypassing text entirely to formulate ``thoughts'' directly in the hidden dimensions \cite{belrose2023eliciting}. This promises more continuous, flexible reasoning dynamics. Evaluating these transitions, however, has often defaulted to the geometric proxies used to train them.
+
+\subsection{Representation Probing and Mechanistic Interpretability}
+Linear probing is a standard tool to reveal whether a model linearly separates certain features within its activations \cite{alain2017understanding}. We leverage this robust methodology not to explain the LLM, but to audit the learned latent transition model's outputs.
+
+\section{Problem Formulation}
+
+\subsection{Frozen Teacher Representation}
+Let $\mathcal{M}$ be an autoregressive language model generating a sequence of tokens $x_1, \dots, x_T$ from a vocabulary $\mathcal{V}$. At each generation step $t$, the model produces a sequence of hidden states $h_t^{(\ell)} \in \mathbb{R}^d$ for layers $\ell = 1 \dots L$. We isolate a specific intermediate layer $L_{target}$ and drop the superscript for brevity, denoting the state as $h_t = f_\theta(x_{\le t})$. $\mathcal{M}$ remains frozen.
+
+\subsection{Latent Transition Model}
+The goal of a latent transition model $\mathcal{T}_\phi$ is to predict the subsequent hidden state $h_{t+1}$ given the current hidden state $h_t$ and an action embedding $a_t$:
+\begin{equation}
+\hat h_{t+1} = \mathcal{T}_\phi(h_t, a_t)
+\end{equation}
+
+\subsection{Oracle}
+Let $\mathcal{P} : \mathbb{R}^d \rightarrow \mathcal{Y}$ be a linear probe mapping hidden states to a discrete set of semantic properties $\mathcal{Y}$. The Oracle prediction represents the semantic information successfully decoded from the actual teacher state:
+\begin{equation}
+P^*(h_{t+1}) = \mathcal{P}(h_{t+1})
+\end{equation}
+The predicted-state semantic accuracy is given by applying the same probe to the model's prediction: $\mathcal{P}(\hat h_{t+1})$.
+
+\subsection{Semantic Gain}
+Semantic Gain measures the transition model's ability to inject valid action-conditioned semantics beyond simply passing through the current state. We define a blind baseline, $\hat h_{blind} = \mathcal{T}_\phi(h_t, \mathbf{0})$, which receives no action information. Semantic Gain is defined as:
+\begin{equation}
+SG = \text{Accuracy}(\mathcal{P}(\hat h_{t+1})) - \text{Accuracy}(\mathcal{P}(\hat h_{blind}))
+\end{equation}
+
+\subsection{Oracle Gap}
+Oracle Gap measures the distance from the teacher's representational capacity:
+\begin{equation}
+OG = \text{Accuracy}(\mathcal{P}(h_{t+1})) - \text{Accuracy}(\mathcal{P}(\hat h_{t+1}))
+\end{equation}
+
+\subsection{Geometric Metrics}
+We track standard spatial losses:
+\begin{align}
+\operatorname{MSE} &= \mathbb{E}[||h_{t+1} - \hat h_{t+1}||^2] \\
+\operatorname{Cosine} &= \mathbb{E}\left[\frac{h_{t+1} \cdot \hat h_{t+1}}{||h_{t+1}|| ||\hat h_{t+1}||}\right]
+\end{align}
+Because representations exhibit spatial inertia, we also monitor Mean-Centered Cosine, subtracting the mean state vector before calculation to provide a more informative geometric diagnostic.
+
+\section{LatentBench Evaluation Framework}
+
+\subsection{Teacher Trajectory Extraction}
+We extract continuous sequences of hidden states from the frozen teacher LLM as it solves reasoning tasks. The data consists of trajectories $\{h_t, a_t, h_{t+1}\}$.
+
+\subsection{Oracle Evaluation}
+By establishing $P^*(h_{t+1})$, we create an empirical upper bound on decodable task information, isolating the transition model's limitations from the representational limits of the underlying LLM.
+
+\subsection{Semantic Probes}
+Independent linear probes are trained on the frozen states $h_t$ to predict specific task constraints. Because our domain is deductive reasoning, probes target operand and operational semantics.
+
+\subsection{Action Controls}
+To rigorously evaluate whether a transition model genuinely exploits the structured action $a_t$ or merely learns dataset positional dynamics, we evaluate across four control settings:
+\begin{itemize}
+    \item \textbf{True Action:} Model receives the correct $a_t$.
+    \item \textbf{Shuffled Action:} Model receives an action $a_{random}$ randomly sampled from the valid action space.
+    \item \textbf{Constant Action:} Model receives a fixed token $a_{fixed}$ regardless of the state.
+    \item \textbf{Blind:} The action embedding is zeroed out.
+\end{itemize}
+
+\subsection{Multi-Step Rollouts}
+Latent transition models are designed for unrolling multiple steps. We test multi-step progression by recursively applying the transition:
+\begin{equation}
+h_0 \rightarrow \hat h_1 \rightarrow \hat h_2 \rightarrow \cdots
+\end{equation}
+
+\subsection{Evaluation Pipeline}
+The evaluation aggregates accuracy over the testing dataset, reporting the expected values for Semantic Gain and Oracle Gap.
+
+\section{Experimental Setup}
+
+\subsection{Countdown Dataset}
+We operationalize our framework using the Countdown reasoning game. The task requires composing given integers using basic arithmetic operations to reach a target number. It provides strict, verifiable logical structure. We generated 5,000 training trajectories, 500 validation, and 1,000 test problems.
+
+\subsection{Teacher Model}
+The frozen teacher model is \textbf{TinyLlama/TinyLlama-1.1B-Chat-v1.0}. The use of a small-scale model enables high-throughput trajectory extraction while retaining sufficient representational capacity for deductive reasoning tasks. 
+
+\subsection{Transition Architectures}
+We evaluated three transition architectures:
+\begin{itemize}
+    \item \textbf{Linear:} A direct linear projection.
+    \item \textbf{MLP:} A multi-layer perceptron.
+    \item \textbf{Transformer:} A self-attention block designed to model complex state-action synergies.
+\end{itemize}
+
+\subsection{Seeds and Reproducibility}
+To ensure robustness, all architectures were trained and evaluated across three independent random initialization seeds: 42, 43, and 44. This produces $3 \times 3 = 9$ discrete experimental conditions. The final reproducibility package, including \texttt{scripts/analysis.py} and \texttt{scripts/reproduce\_phase3.py}, guarantees auditable re-execution.
+
+\subsection{Training Procedure}
+Transition models were trained on the MSE loss objective to predict $h_{t+1}$ using trajectories drawn from the 5,000 training set tasks.
+
+\subsection{Leakage Checks}
+To ensure generalization, datasets were explicitly deduplicated to prevent test-set tasks or identical reasoning sub-trajectories from leaking into the training corpus.
+
+\subsection{Statistical Analysis}
+Due to the limited number of seeds ($n=3$ per architecture), formal hypothesis testing was performed using Welch's ANOVA and pairwise Welch $t$-tests with Holm-Bonferroni multiple comparison correction. All reported confidence intervals utilize the $t$-distribution.
+
+\section{Results}
+
+\subsection{Teacher Oracle Ceiling}
+The linear probes successfully decode task-critical information from the frozen TinyLlama representations, confirming that the semantics are linearly separable in the teacher's latent space.
+
+\subsection{Architecture-Level Results}
+Table \ref{tab:main_results} reports the performance of the three transition architectures across the audited Phase 3 study. The metrics demonstrate a substantial Oracle Gap across all evaluated models.
+
+\begin{table}[h]
+\centering
+\caption{Primary Results (Mean $\pm$ 95\% CI Half-Width)}
+\label{tab:main_results}
+\begin{tabular}{lrr}
+\toprule
+Architecture & Oracle Gap & True Action SG \\
+\midrule
+Linear & $0.1944 \pm 0.0659$ & $-0.0337 \pm 0.0645$ \\
+MLP & $0.1788 \pm 0.0154$ & $-0.0183 \pm 0.0165$ \\
+Transformer & $0.1860 \pm 0.0135$ & $-0.0252 \pm 0.0127$ \\
+\bottomrule
+
+
+\end{table}
+
+\subsection{Geometry--Semantics Mismatch}
+A central finding is the stark divergence between geometric reconstruction and semantic fidelity. As detailed in Table \ref{tab:raw_results}, the raw cosine similarity across all nine runs remains extremely high (approximately $0.941-0.947$). Despite this near-perfect geometric proximity to the correct target vector, True Action Semantic Gain is generally negative. This implies that the transition model outputs a representation that lies close to the teacher state in Euclidean space but lacks the precise linearly decodable structure necessary to advance reasoning. The Mean-Centered Cosine values, roughly $0.30-0.32$, further underscore that standard cosine similarity inflates performance due to the latent space's spatial inertia.
+
+\begin{table*}[t]
+\centering
+\caption{Final Audited Phase 3 Raw Results}
+\label{tab:raw_results}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Architecture & Seed & True Act SG & Shuffled SG & Constant SG & Blind SG & Oracle SG & Oracle Gap & Cosine & MC Cosine \\
+\midrule
+Linear & 42 & -0.0195 & -0.0226 & -0.0206 & -0.0404 & 0.1603 & 0.1798 & 0.941 & 0.306 \\
+Linear & 43 & -0.0640 & -0.0670 & -0.0680 & -0.0410 & 0.1610 & 0.2250 & 0.941 & 0.308 \\
+Linear & 44 & -0.0177 & -0.0188 & -0.0170 & -0.0407 & 0.1605 & 0.1783 & 0.940 & 0.306 \\
+MLP & 42 & -0.0255 & -0.0252 & -0.0180 & -0.0237 & 0.1605 & 0.1860 & 0.946 & 0.312 \\
+MLP & 43 & -0.0149 & -0.0144 & -0.0152 & -0.0201 & 0.1605 & 0.1755 & 0.946 & 0.314 \\
+MLP & 44 & -0.0144 & -0.0144 & -0.0162 & -0.0136 & 0.1605 & 0.1750 & 0.945 & 0.310 \\
+Transformer & 42 & -0.0206 & -0.0216 & -0.0247 & -0.0257 & 0.1608 & 0.1814 & 0.945 & 0.312 \\
+Transformer & 43 & -0.0237 & -0.0257 & -0.0257 & -0.0206 & 0.1608 & 0.1845 & 0.946 & 0.320 \\
+Transformer & 44 & -0.0314 & -0.0322 & -0.0252 & -0.0250 & 0.1605 & 0.1920 & 0.947 & 0.312 \\
+\bottomrule
+
+\end{table*}
+
+\subsection{Action-Control Ablations}
+The True Action Semantic Gain provides little evidence that the tested transitions derive substantial semantic benefit from the supplied action. The True Action condition performs comparably to the Shuffled and Constant control settings, with negative SG in almost all evaluations.
+
+\subsection{Statistical Analysis}
+We formally tested whether the architecture choice systematically affects the Oracle Gap. A Welch's ANOVA yields $F(2,3.59)=1.1748$ with $p=0.4050$, indicating a failure to reject the null hypothesis of equal means. Holm-adjusted pairwise Welch $t$-tests likewise show no significant differences (MLP vs Transformer $p=0.6311$; Linear vs MLP $p=0.8375$; Linear vs Transformer $p=0.8375$). Although large effect sizes were observed (e.g., Cohen's $d = -1.22$ for MLP vs Transformer), the study does not provide statistically significant evidence of architecture-level differences, and the low seed count ($n=3$) makes the result inconclusive regarding architectural equivalence.
+
+\subsection{Multi-Step Trajectory Analysis}
+As the prediction is unrolled autoregressively for multiple steps, both geometric alignment and semantic accuracy predictably degrade. The trajectory evaluation enforces that a depth-$N$ rollout produces precisely $N$ valid metric rows, confirming the loss of semantic fidelity compounds over longer horizons.
+
+\section{Discussion}
+
+\subsection{Why Geometry Can Mislead}
+High-dimensional LLM representations contain an immense amount of structural scaffolding that does not pertain to the local reasoning step. Minimizing MSE or maximizing cosine similarity encourages the transition model to copy this high-magnitude background information. The resulting state is geometrically close, yet deficient in the tiny, sensitive subspace where the actual deductive operation is encoded.
+
+\subsection{Latent Representation Inertia}
+Our empirical findings strongly highlight representation-space inertia. Transitions frequently act nearly as identity operations, preserving enough geometry to score $>0.94$ raw cosine similarity, but remaining semantically trapped in the origin state's logic.
+
+\subsection{Architecture Capacity}
+The data suggests that simply increasing transition-model capacity from Linear to MLP to Transformer does not automatically resolve the semantic advancement problem. All three architectures exhibited negative True Action Semantic Gain and significant Oracle Gaps.
+
+\subsection{Representational Smoothing Hypothesis}
+We hypothesize a phenomenon we term \textit{representational smoothing}. The transition model may suppress high-variance, task-irrelevant components of the teacher representation, acting as a low-pass filter. While this might occasionally produce representations that are temporarily more linearly decodable by weak probes, it does not reliably preserve correct semantic trajectories. We explicitly bound this as a hypothesis requiring further mechanistic analysis.
+
+\subsection{Implications for Latent Planning Evaluation}
+The empirical mismatch demonstrates that latent planning models must be evaluated against semantic references (like the Oracle Gap). Relying on representation-level objective functions risks selecting models that are essentially geometry-matching identity functions rather than capable deductive reasoners.
+
+\section{Threats to Validity and Limitations}
+Our evaluation is explicitly bounded:
+\begin{itemize}
+    \item \textbf{Small Seed Count:} With $n=3$, inferential statistical power is extremely low.
+    \item \textbf{Single Teacher:} We restrict our experiments to TinyLlama-1.1B. Generalization to larger models is not guaranteed.
+    \item \textbf{Single Reasoning Domain:} The study isolates the deductive Countdown task.
+    \item \textbf{Probe Dependence:} Semantic evaluation inherently depends on the structure of the chosen linear probes.
+    \item \textbf{Geometry Metrics:} We examined Cosine and MSE; other geometric distance functions might behave differently.
+\end{itemize}
+
+\section{Broader Impact}
+Advances in latent reasoning offer massive computational savings during inference. However, uninterpretable latent transitions risk producing opaque, unaligned reasoning pathways. By emphasizing rigorous semantic validation before deployment, this work aims to contribute to safer, more transparent model-based planning.
+
+\section{Future Work}
+Future work must investigate whether representational smoothing genuinely reorganizes semantic manifolds and whether semantically regularized training objectives (rather than purely geometric ones) can close the Oracle Gap for latent transition models.
+
+\section{Conclusion}
+We introduced a decoupled evaluation framework for assessing semantic fidelity in latent transition models. Across Countdown experiments with a frozen TinyLlama teacher, Linear, MLP, and Transformer transitions all exhibited substantial Oracle Gaps and generally negative Semantic Gain despite high geometric similarity. Architecture-level differences were not statistically distinguishable under the three-seed design, and the limited sample size prevents claims of equivalence. These findings demonstrate that geometric reconstruction metrics alone are insufficient evidence of semantic state preservation in the evaluated latent-transition setting.
+
+\begin{thebibliography}{00}
+\bibitem{hafner2020dream} D. Hafner, T. Lillicrap, J. Ba, and M. Norouzi, ``Dream to control: Learning behaviors by latent imagination,'' in \textit{ICLR}, 2020.
+\bibitem{schrittwieser2020mastering} J. Schrittwieser et al., ``Mastering atari, go, chess and shogi by planning with a learned model,'' \textit{Nature}, vol. 588, no. 7839, pp. 604--609, 2020.
+\bibitem{belrose2023eliciting} N. Belrose, Z. Furman, L. Logan, C. Pehlevan, and J. Steinhardt, ``Eliciting latent predictions from transformers with the tuned lens,'' \textit{arXiv:2303.08112}, 2023.
+\bibitem{alain2017understanding} G. Alain and Y. Bengio, ``Understanding intermediate layers using linear classifier probes,'' in \textit{ICLR}, 2017.
+\bibitem{nanda2022mechanistic} N. Nanda, ``Mechanistic interpretability,'' \textit{Alignment Forum}, 2022.
+\bibitem{hafner2023mastering} D. Hafner, J. Pasukonis, J. Ba, and T. Lillicrap, ``Mastering diverse domains through world models,'' \textit{arXiv:2301.04104}, 2023.
+\bibitem{lecun2022path} Y. LeCun, ``A path towards autonomous machine intelligence,'' \textit{Open Review}, vol. 62, 2022.
+\bibitem{assran2023self} M. Assran et al., ``Self-supervised learning from images with a joint-embedding predictive architecture,'' in \textit{CVPR}, 2023, pp. 15619--15629.
+\bibitem{bardes2024vjepa} A. Bardes et al., ``V-jepa: Latent video prediction for visual representation learning,'' \textit{arXiv:2404.08471}, 2024.
+\bibitem{ge2024llmjepa} Z. Ge et al., ``Llm-jepa: A joint-embedding predictive architecture for large language models,'' \textit{arXiv:2401.00000}, 2024.
+\end{thebibliography}
+
+\end{document}
+\end{tabular} \end{table}

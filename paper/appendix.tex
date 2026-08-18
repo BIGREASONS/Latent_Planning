@@ -1,0 +1,35 @@
+\appendix
+
+\section{Reproducibility Checklist}
+
+\begin{itemize}
+    \item Random seeds reported: \checkmark
+    \item Hyperparameters reported: \checkmark
+    \item Dataset generation described: \checkmark
+    \item Hardware described: \checkmark
+    \item Evaluation scripts included: \checkmark
+    \item Training scripts included: \checkmark
+    \item Statistical aggregation reported: \checkmark
+\end{itemize}
+
+\section{Experiment Manifest}
+
+Table~\ref{tab:manifest} details the core experimental configurations evaluated in this work.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llllp{3cm}}
+\toprule
+\textbf{Experiment} & \textbf{Model} & \textbf{Domain} & \textbf{Transition} & \textbf{Seed(s)} \\
+\midrule
+E1 & Qwen2.5-7B & Countdown & MLP & 42 \\
+E2 & Mistral-7B & Countdown & MLP & 42 \\
+E3 & DeepSeek-R1-Distill-Qwen-7B & Countdown & MLP & 42 \\
+E4 & Qwen2.5-7B & Game24 & MLP & 42 \\
+E5 & Qwen2.5-7B & Countdown & Linear & 42, 43, 44 \\
+E6 & Qwen2.5-7B & Countdown & Transformer & 42, 43, 44 \\
+\bottomrule
+\end{tabular}
+\caption{Reproducibility artifact manifest outlining evaluated models, domains, and configurations.}
+\label{tab:manifest}
+\end{table}

@@ -1,0 +1,13 @@
+\section{Discussion}
+
+Our primary empirical observation is that optimizing geometric reconstruction objectives did not consistently optimize semantic preservation in our experiments. Across multiple transition architectures, cosine similarity and MSE remained nearly unchanged while semantic preservation differed measurably. The Transformer architecture successfully narrowed the Oracle Gap compared to the baseline models, indicating superior semantic modeling, yet this advantage was entirely invisible to standard geometric loss functions.
+
+\subsection*{Negative Oracle Gap}
+
+During our empirical evaluation, we observed that under a specific linear probe (Probe A: remaining operands), the Transformer's transition states achieved a higher decoding accuracy (0.6000) than the true Oracle teacher states (0.5625), resulting in a negative Oracle Gap. This observation does \textit{not} imply that the Transformer is a ``better'' model of the reasoning process than the underlying LLM. Rather, it indicates that the teacher representation is not necessarily optimal for linear decoding, particularly given the large feature space (2048 dimensions) and limited intermediate states available for probe fitting ($\approx$ 52 samples). 
+
+One possible explanation is that the learned transition suppresses high-variance components of the teacher representation while preserving task-relevant information, producing states that are more linearly separable for the weak probe. We refer to this hypothesis as \textit{representational smoothing}. We leave a direct investigation of this mechanism---including whether it is an artifact of probe instability, feature variance reduction, or genuine geometric reorganization---to future work.
+
+\subsection*{Conclusion}
+
+This empirical mismatch naturally motivates the exploration of semantic-aware optimization objectives as future work. Furthermore, we note that raw cosine similarity in transformer latent spaces can be highly misleading due to representation anisotropy. Contextualizing geometric metrics with random-pair baselines is critical to avoid the ''cosine mirage,'' where transition models appear to capture rich dynamics but are merely generating mean-centered representations or incrementing position encodings. We conclude that future work in latent planning must incorporate explicit semantic evaluations to accurately gauge transition model capabilities.

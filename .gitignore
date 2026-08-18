@@ -1,18 +1,39 @@
-# Ignore python caches and temp files
+# tensors
+*.pt
+*.pth
+*.bin
+
+# numpy
+*.npy
+*.npz
+
+# datasets
+data/raw/
+data/cache/
+*.jsonl
+
+# checkpoints
+checkpoints/
+checkpoints_qwen/
+
+# logs
+scratch_logs/
+*.log
+
+# pycache
 __pycache__/
 *.pyc
-*.log
-*.aux
-*.zip
-.env
+.pytest_cache/
+*.egg-info/
 
-# Ignore agent generated temp scripts
-fix.py
-fix2.py
-replace_placeholders.py
-update_repo.py
+# vscode
+.vscode/
 
-# Ignore extra folders
-latentbench-v1.0/
-pandoc*/
-models/
+# outputs
+reports_qwen/raw/
+reports/trajectories/
+reports/discrete_trajectories/
+reports/scrubbed/
+
+pandoc-3.1.9/
+pandoc.zip

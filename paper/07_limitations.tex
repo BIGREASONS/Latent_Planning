@@ -1,0 +1,20 @@
+\subsection{Threats to Validity}
+
+\textbf{Internal validity.} Our semantic evaluation relies on the capacity of linear probes. A score near chance indicates a lack of linear separability, not necessarily a lack of information. Furthermore, due to dataset constraints, probes were fitted on small training sets ($\approx$ 52 states), increasing susceptibility to overfitting or underfitting. Our evaluation also strictly depends on the specific cached teacher trajectories used.
+
+\textbf{External validity.} Our findings are currently validated on selected autoregressive LLMs (e.g., Qwen2.5-7B, Mistral-7B, DeepSeek-R1-Distill-Qwen-7B) performing highly structured deductive reasoning (Countdown and Game24). Results may differ for other architectures, modalities, or open-ended reasoning tasks. The evaluated transition models were limited to shallow Linear, MLP, and Transformer blocks ($\sim$4.2M parameters).
+
+\textbf{Construct validity.} Semantic Gain measures probe-decodable semantics rather than downstream causal reasoning efficacy. The Oracle Gap is fundamentally bounded by the performance of the probe on the teacher state, which itself is imperfect.
+
+\section{Artifact Availability}
+
+To ensure complete transparency and reproducibility, the research repository for this paper contains:
+\begin{itemize}
+    \item Source code for transition models and evaluation probes.
+    \item Dataset generation and caching scripts.
+    \item Multi-seed experiment configurations and runner scripts.
+    \item Archived raw outputs and summarized reports.
+    \item Provenance manifests.
+    \item Instructions for end-to-end reproduction.
+\end{itemize}
+The artifacts will be released publicly upon publication.

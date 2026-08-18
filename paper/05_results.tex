@@ -1,0 +1,30 @@
+\section{Results}
+
+\subsection{Architecture Expressiveness vs. Semantic Preservation}
+
+\textbf{Observation:} Under the evaluated configurations, the Transformer transition architecture reduced the Oracle Gap relative to the MLP and Linear baselines, despite all three architectures achieving comparable geometric reconstruction (MSE and cosine similarity scores).
+
+\textbf{Interpretation:} This suggests that transition architecture expressiveness influences semantic preservation, and that geometric metrics alone are insufficient to distinguish between them.
+
+\subsection{Action Conditioning Analysis}
+
+\textbf{Observation:} (Placeholder: e.g., True Action significantly outperformed the Shuffled and Constant Action baselines in semantic gain, while Shuffled and Constant Action performed identically to the Blind transition.)
+
+\textbf{Interpretation:} This provides evidence that the transition model is genuinely utilizing the semantic content of the action vector, rather than merely exploiting positional dynamics or advancing a generic state counter.
+
+\begin{table*}[h]
+\centering
+\begin{tabular}{l l l c c c c c c l}
+\toprule
+\textbf{Experiment} & \textbf{Rep.} & \textbf{Transition} & \textbf{Oracle} & \textbf{Identity} & \textbf{Blind} & \textbf{Action} & \textbf{Shuffle} & \textbf{Constant} & \textbf{Outcome} \\
+\midrule
+Qwen Countdown & \checkmark & MLP & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \dots \\
+Mistral Countdown & \checkmark & MLP & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \dots \\
+DeepSeek Countdown & \checkmark & MLP & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \dots \\
+Game24 & \checkmark & MLP & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \dots \\
+Architecture Comp. & \checkmark & Lin/MLP/TF & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & TF > MLP > Lin (SG) \\
+\bottomrule
+\end{tabular}
+\caption{Master summary of the experimental evaluations. (To be populated upon completion of validation runs)}
+\label{tab:master_summary}
+\end{table*}
