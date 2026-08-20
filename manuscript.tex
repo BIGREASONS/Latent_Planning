@@ -179,7 +179,7 @@ We evaluated three transition architectures:
 \end{itemize}
 
 \subsection{Seeds and Reproducibility}
-To ensure robustness, all architectures were trained and evaluated across three independent random initialization seeds: 42, 43, and 44. This produces $3 \times 3 = 9$ discrete experimental conditions. The final reproducibility package guarantees auditable re-execution of the TinyLlama Phase 3 experiments from the raw output logs, ensuring robust and transparent validation. The canonical repository preserving the software and reproducibility artifacts for the experiments reported in this manuscript is available at \url{https://github.com/BIGREASONS/Latent_Planning}.
+To ensure robustness, all architectures were trained and evaluated across three independent random initialization seeds: 42, 43, and 44. This produces $3 \times 3 = 9$ discrete experimental conditions. The canonical result artifacts and analysis pipeline are archived in the repository; model-checkpoint availability is documented separately due to storage constraints. The canonical repository preserving the software and experimental outputs for the experiments reported in this manuscript is available at \url{https://github.com/BIGREASONS/Latent_Planning}.
 
 \subsection{Training Procedure}
 Transition models were trained on the MSE loss objective to predict $h_{t+1}$ using trajectories drawn from the 5,000 training set tasks.
@@ -213,9 +213,9 @@ Table \ref{tab:main_results} reports the performance of the three transition arc
 \toprule
 Architecture & Oracle Gap & True Action SG \\
 \midrule
-Linear & $0.1944 \pm 0.0659$ & $-0.0337 \pm 0.0645$ \\
-MLP & $0.1788 \pm 0.0154$ & $-0.0183 \pm 0.0165$ \\
-Transformer & $0.1860 \pm 0.0135$ & $-0.0252 \pm 0.0127$ \\
+Linear & $0.1944 \pm 0.0658$ & $-0.0339 \pm 0.0656$ \\
+MLP & $0.1789 \pm 0.0155$ & $-0.0183 \pm 0.0155$ \\
+Transformer & $0.1860 \pm 0.0137$ & $-0.0254 \pm 0.0137$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -227,7 +227,7 @@ A central finding is the stark divergence between geometric reconstruction and s
 The results provide limited evidence that the tested transitions consistently derive semantic benefit from the supplied action. The True Action condition performs comparably to the Shuffled and Constant control settings, with negative SG in almost all evaluations.
 
 \subsection{Statistical Analysis}
-We formally tested whether the architecture choice systematically affects the Oracle Gap. The comprehensive statistical tests are reported in Table \ref{tab:stats}. A Welch's ANOVA yields $F(2,3.59)=1.1748$ with $p=0.4050$, which did not provide statistically significant evidence of differences in mean Oracle Gap across architectures. Holm-adjusted pairwise Welch $t$-tests likewise show no statistically significant differences. To verify whether initialization variance masked architecture effects, we additionally conducted a paired sensitivity analysis blocking by random seed; this approach also yielded no statistically significant architecture-level differences ($F(2,4)=0.593$, $p=0.595$). Although large effect sizes were observed (e.g., Cohen's $d = -1.221$ for MLP vs Transformer), these effect-size estimates are exploratory and should be interpreted cautiously given the very small number of independent seeds. The study does not provide statistically significant evidence of architecture-level differences, and the low seed count ($n=3$) makes the result inconclusive regarding architectural equivalence.
+We formally tested whether the architecture choice systematically affects the Oracle Gap. The comprehensive statistical tests are reported in Table \ref{tab:stats}. A Welch's ANOVA yields $F(2,3.59)=1.160$ with $p=0.409$, which did not provide statistically significant evidence of differences in mean Oracle Gap across architectures. Holm-adjusted pairwise Welch $t$-tests likewise show no statistically significant differences. To verify whether initialization variance masked architecture effects, we additionally conducted a paired sensitivity analysis blocking by random seed; this approach also yielded no statistically significant architecture-level differences ($F(2,4)=0.604$, $p=0.590$). Although large effect sizes were observed (e.g., Cohen's $d = -1.221$ for MLP vs Transformer), these effect-size estimates are exploratory and should be interpreted cautiously given the very small number of independent seeds. The study does not provide statistically significant evidence of architecture-level differences, and the low seed count ($n=3$) makes the result inconclusive regarding architectural equivalence.
 
 \begin{table}[H]
 \centering
@@ -249,7 +249,7 @@ Linear vs Transformer & $0.537$ & $0.6413$ & $0.8375$ & $d=0.438$ \\
 
 To assess whether the observed geometry--semantics mismatch was confined to the TinyLlama setting, we conducted follow-up experiments with three additional 7B-parameter teachers: Qwen 2.5, Mistral 7B, and DeepSeek-R1-Distill-Qwen-7B. These experiments were new training runs conducted after the primary Phase 3 study as a follow-up validation stage. They used an MLP transition and were not repeated across the three-seed, three-architecture Phase 3 protocol. Nevertheless, all three Countdown runs exhibited high cosine similarity ($>0.95$) alongside substantial corresponding Oracle Gaps and little or negative semantic advancement relative to the identity baseline. These results provide preliminary evidence that the observed geometry--semantics mismatch is not confined to the TinyLlama setting.
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \caption{Exploratory Validation with 7B Teachers (Depth 1)}
 \label{tab:larger_teachers}
@@ -262,9 +262,9 @@ Mistral 7B & Countdown & 0.958 & 0.441 & -0.232 \\
 DeepSeek-R1-Distill-Qwen-7B & Countdown & 0.987 & 0.182 & +0.004 \\
 Qwen 2.5 7B & Game24 & 0.991 & 0.132 & +0.001 \\
 \bottomrule
-\multicolumn{5}{p{0.95\columnwidth}}{\small \textsuperscript{*}Exploratory quantities derived from the earlier evaluation pipeline; not included in the primary Phase 3 statistical analysis.}
+\multicolumn{5}{p{0.95\textwidth}}{\small \textsuperscript{*}Exploratory quantities derived from the earlier evaluation pipeline; not included in the primary Phase 3 statistical analysis.}
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Cross-Domain Exploratory Validation}
 
@@ -336,15 +336,15 @@ Table \ref{tab:raw_results_app} presents the complete set of raw metrics obtaine
 \toprule
 Arch. & Seed & True SG & Oracle SG & Oracle Gap & Cosine \\
 \midrule
-Linear & 42 & -0.0195 & 0.1603 & 0.1798 & 0.941 \\
-Linear & 43 & -0.0640 & 0.1610 & 0.2250 & 0.941 \\
-Linear & 44 & -0.0177 & 0.1605 & 0.1783 & 0.940 \\
-MLP & 42 & -0.0255 & 0.1605 & 0.1860 & 0.946 \\
-MLP & 43 & -0.0149 & 0.1605 & 0.1755 & 0.946 \\
-MLP & 44 & -0.0144 & 0.1605 & 0.1750 & 0.945 \\
-Trans. & 42 & -0.0206 & 0.1608 & 0.1814 & 0.945 \\
-Trans. & 43 & -0.0237 & 0.1608 & 0.1845 & 0.946 \\
-Trans. & 44 & -0.0314 & 0.1605 & 0.1920 & 0.947 \\
+Linear & 42 & -0.0196 & 0.1603 & 0.1799 & 0.9410 \\
+Linear & 43 & -0.0644 & 0.1606 & 0.2250 & 0.9414 \\
+Linear & 44 & -0.0178 & 0.1606 & 0.1784 & 0.9409 \\
+MLP & 42 & -0.0255 & 0.1606 & 0.1861 & 0.9466 \\
+MLP & 43 & -0.0149 & 0.1606 & 0.1755 & 0.9468 \\
+MLP & 44 & -0.0144 & 0.1606 & 0.1750 & 0.9450 \\
+Trans. & 42 & -0.0206 & 0.1606 & 0.1812 & 0.9464 \\
+Trans. & 43 & -0.0242 & 0.1606 & 0.1848 & 0.9459 \\
+Trans. & 44 & -0.0314 & 0.1606 & 0.1920 & 0.9475 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -357,15 +357,15 @@ Trans. & 44 & -0.0314 & 0.1605 & 0.1920 & 0.947 \\
 \toprule
 Arch. & Seed & True SG & Shuffled SG & Constant SG & Blind SG \\
 \midrule
-Linear & 42 & -0.0196 & -0.0230 & -0.0210 & -0.0400 \\
-Linear & 43 & -0.0644 & -0.0670 & -0.0680 & -0.0270 \\
-Linear & 44 & -0.0178 & -0.0190 & -0.0170 & -0.0410 \\
-MLP & 42 & -0.0255 & -0.0250 & -0.0180 & -0.0240 \\
-MLP & 43 & -0.0149 & -0.0140 & -0.0150 & -0.0200 \\
-MLP & 44 & -0.0144 & -0.0140 & -0.0160 & -0.0140 \\
-Trans. & 42 & -0.0206 & -0.0210 & -0.0240 & -0.0240 \\
-Trans. & 43 & -0.0242 & -0.0260 & -0.0260 & -0.0200 \\
-Trans. & 44 & -0.0314 & -0.0320 & -0.0250 & -0.0250 \\
+Linear & 42 & -0.0196 & -0.0227 & -0.0206 & -0.0405 \\
+Linear & 43 & -0.0644 & -0.0670 & -0.0683 & -0.0271 \\
+Linear & 44 & -0.0178 & -0.0188 & -0.0170 & -0.0407 \\
+MLP & 42 & -0.0255 & -0.0253 & -0.0180 & -0.0237 \\
+MLP & 43 & -0.0149 & -0.0144 & -0.0152 & -0.0201 \\
+MLP & 44 & -0.0144 & -0.0144 & -0.0162 & -0.0137 \\
+Trans. & 42 & -0.0206 & -0.0211 & -0.0245 & -0.0237 \\
+Trans. & 43 & -0.0242 & -0.0263 & -0.0263 & -0.0198 \\
+Trans. & 44 & -0.0314 & -0.0322 & -0.0253 & -0.0250 \\
 \bottomrule
 \end{tabular}
 \end{table}
