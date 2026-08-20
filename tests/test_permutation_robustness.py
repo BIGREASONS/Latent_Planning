@@ -10,15 +10,23 @@ def _make_group(n_solutions, shared_start_code):
     for s in range(n_solutions):
         N = 3
         codes = torch.tensor(
-            [shared_start_code, shared_start_code + s + 1,
-             shared_start_code + s + 2, shared_start_code + s + 3],
+            [
+                shared_start_code,
+                shared_start_code + s + 1,
+                shared_start_code + s + 2,
+                shared_start_code + s + 3,
+            ],
             dtype=torch.int64,
         )
-        trajs.append(DiscreteTrajectory(
-            codes=codes, op_ids=torch.zeros(N, dtype=torch.long),
-            operands=torch.zeros(N, 2),
-            numbers=[25, 50, 75, 100, 3, 5], target=100,
-        ))
+        trajs.append(
+            DiscreteTrajectory(
+                codes=codes,
+                op_ids=torch.zeros(N, dtype=torch.long),
+                operands=torch.zeros(N, 2),
+                numbers=[25, 50, 75, 100, 3, 5],
+                target=100,
+            )
+        )
     return trajs
 
 
@@ -44,12 +52,18 @@ def test_baseline_below_random():
         group = []
         for _ in range(3):
             N = 3
-            codes = torch.tensor([rng.randint(0, 16) for _ in range(N + 1)], dtype=torch.int64)
-            group.append(DiscreteTrajectory(
-                codes=codes, op_ids=torch.zeros(N, dtype=torch.long),
-                operands=torch.zeros(N, 2),
-                numbers=[25, 50, 75, 100, 3, 5], target=100,
-            ))
+            codes = torch.tensor(
+                [rng.randint(0, 16) for _ in range(N + 1)], dtype=torch.int64
+            )
+            group.append(
+                DiscreteTrajectory(
+                    codes=codes,
+                    op_ids=torch.zeros(N, dtype=torch.long),
+                    operands=torch.zeros(N, 2),
+                    numbers=[25, 50, 75, 100, 3, 5],
+                    target=100,
+                )
+            )
         groups.append(group)
     m = evaluate_permutation_robustness(groups, num_codes=16, seed=0)
     # Cross consistency should be near the uniform baseline (1/16 ≈ 0.0625).
@@ -69,9 +83,13 @@ def test_metrics_in_dict():
     groups = [_make_group(2, 10)]
     m = evaluate_permutation_robustness(groups, num_codes=32, seed=0)
     expected_keys = {
-        "cross_consistency", "within_consistency",
-        "uniform_random_baseline", "empirical_random_baseline",
-        "n_pairs_cross", "n_problems_with_match",
-        "n_problems_total", "mean_solutions_per_problem",
+        "cross_consistency",
+        "within_consistency",
+        "uniform_random_baseline",
+        "empirical_random_baseline",
+        "n_pairs_cross",
+        "n_problems_with_match",
+        "n_problems_total",
+        "mean_solutions_per_problem",
     }
     assert expected_keys.issubset(m.keys())

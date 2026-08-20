@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser(description="Latent Planning Postflight Validator")
     parser.add_argument("--out_dir", required=True, help="Output directory to validate")
@@ -10,7 +11,7 @@ def main():
     print(f"=== LATENT PLANNING POSTFLIGHT VALIDATION ===")
     print(f"Checking artifacts in: {args.out_dir}")
     print("-" * 40)
-    
+
     if not os.path.exists(args.out_dir):
         print(f"[FAIL] Output directory '{args.out_dir}' does not exist.")
         sys.exit(1)
@@ -22,7 +23,7 @@ def main():
         "coherence_blind_depth.csv",
         "coherence_oracle_depth.csv",
         "transition_model_action.pt",
-        "transition_model_blind.pt"
+        "transition_model_blind.pt",
     ]
 
     missing = []
@@ -41,19 +42,25 @@ def main():
 
     print("-" * 40)
     if missing:
-        print(f"❌ POSTFLIGHT FAILED: {len(missing)} expected artifacts are missing or empty.")
+        print(
+            f"❌ POSTFLIGHT FAILED: {len(missing)} expected artifacts are missing or empty."
+        )
         print(f"Missing: {missing}")
         sys.exit(1)
     else:
         print("✅ POSTFLIGHT PASSED: All expected artifacts generated successfully.")
-        
+
         # Free up disk space by deleting the large trajectory tensors before Kaggle archives the output
         traj_dir = os.path.join(args.out_dir, "trajectories")
         if os.path.exists(traj_dir):
             import shutil
-            print(f"🧹 Cleaning up {traj_dir} to save space in the Kaggle download archive...")
+
+            print(
+                f"🧹 Cleaning up {traj_dir} to save space in the Kaggle download archive..."
+            )
             shutil.rmtree(traj_dir, ignore_errors=True)
             print("🧹 Cleanup complete.")
+
 
 if __name__ == "__main__":
     main()

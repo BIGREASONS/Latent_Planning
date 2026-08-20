@@ -29,12 +29,15 @@ def _planted_traj(n, K=5, N=6, seed=0):
             c = (c + (1 if op == 0 else 2)) % K
             codes.append(c)
             ops.append(op)
-        trajs.append(DiscreteTrajectory(
-            codes=torch.tensor(codes, dtype=torch.int64),
-            op_ids=torch.tensor(ops, dtype=torch.long),
-            operands=torch.zeros(N, 2),
-            numbers=[1], target=1,
-        ))
+        trajs.append(
+            DiscreteTrajectory(
+                codes=torch.tensor(codes, dtype=torch.int64),
+                op_ids=torch.tensor(ops, dtype=torch.long),
+                operands=torch.zeros(N, 2),
+                numbers=[1],
+                target=1,
+            )
+        )
     return trajs
 
 
@@ -50,15 +53,20 @@ def test_action_conditioning_recovers_planted_structure():
     assert ab > 0.95, ab
 
     # MLPs: action-conditioned recovers the rule; state-only cannot.
-    d = train_action_mlp(train, ev, K, ActionMLPConfig(use_state=True, use_op=False, epochs=40))
-    e = train_action_mlp(train, ev, K, ActionMLPConfig(use_state=True, use_op=True, epochs=40))
+    d = train_action_mlp(
+        train, ev, K, ActionMLPConfig(use_state=True, use_op=False, epochs=40)
+    )
+    e = train_action_mlp(
+        train, ev, K, ActionMLPConfig(use_state=True, use_op=True, epochs=40)
+    )
     assert d["top1"] < 0.65, d
     assert e["top1"] > 0.9, e
 
     # Structure: H(z'|z) high, H(z'|z,op) ~ 0; determinism flips on conditioning.
     s_state = conditional_structure(train.z_t.tolist(), train.z_next.tolist())
     s_act = conditional_structure(
-        list(zip(train.z_t.tolist(), train.op.tolist())), train.z_next.tolist())
+        list(zip(train.z_t.tolist(), train.op.tolist())), train.z_next.tolist()
+    )
     assert s_state["global_entropy"] > 0.5
     assert s_act["global_entropy"] < 0.1
     assert s_state["det_frac_mass"] < 0.1

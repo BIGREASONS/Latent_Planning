@@ -41,15 +41,17 @@ def _encoded_trajectories(n=60, H=12, steps=4, seed=0):
             all_hidden[i, 3 + dist] = 1.0
         all_hidden += 0.01 * torch.randn(steps + 1, H, generator=g)
         operands = torch.randint(1, 100, (steps, 2), generator=g).float()
-        trajs.append(Trajectory(
-            all_hidden=all_hidden,
-            input_ids=torch.zeros(steps + 1, dtype=torch.long),
-            state_indices=torch.arange(steps + 1),
-            op_ids=op_ids,
-            operands=operands,
-            numbers=[25, 50, 75, 100, 3, 4],
-            target=10,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=all_hidden,
+                input_ids=torch.zeros(steps + 1, dtype=torch.long),
+                state_indices=torch.arange(steps + 1),
+                op_ids=op_ids,
+                operands=operands,
+                numbers=[25, 50, 75, 100, 3, 4],
+                target=10,
+            )
+        )
     return trajs
 
 

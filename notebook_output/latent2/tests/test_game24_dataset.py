@@ -61,6 +61,7 @@ def test_determinism():
 # Pool enumeration tests
 # --------------------------------------------------------------------------- #
 
+
 def test_pool_exhaustive():
     """Every solvable multiset in {1..13}^4 is in the pool, and no unsolvable
     hand is included."""
@@ -84,9 +85,9 @@ def test_pool_exhaustive():
         items = [(n, []) for n in hand]
         is_solvable = _solve(items, TARGET) is not None
         in_pool = hand in pool_set
-        assert is_solvable == in_pool, (
-            f"hand {hand}: solvable={is_solvable} but in_pool={in_pool}"
-        )
+        assert (
+            is_solvable == in_pool
+        ), f"hand {hand}: solvable={is_solvable} but in_pool={in_pool}"
 
 
 def test_pool_size():
@@ -98,6 +99,7 @@ def test_pool_size():
 # --------------------------------------------------------------------------- #
 # Split overlap tests
 # --------------------------------------------------------------------------- #
+
 
 def test_no_split_overlap(tmp_path):
     """Train, val, test splits share zero puzzles."""
@@ -113,9 +115,9 @@ def test_no_split_overlap(tmp_path):
                 rec = json.loads(line)
                 hands.add(tuple(sorted(rec["numbers"])))
         splits[split_name] = hands
-        assert len(hands) == sizes[split_name], (
-            f"{split_name}: expected {sizes[split_name]} unique hands, got {len(hands)}"
-        )
+        assert (
+            len(hands) == sizes[split_name]
+        ), f"{split_name}: expected {sizes[split_name]} unique hands, got {len(hands)}"
 
     # Zero overlap between all pairs
     assert len(splits["train"] & splits["val"]) == 0, "train ∩ val is non-empty"
@@ -125,9 +127,9 @@ def test_no_split_overlap(tmp_path):
     # Union covers entire pool
     pool = set(enumerate_solvable_pool())
     union = splits["train"] | splits["val"] | splits["test"]
-    assert union == pool, (
-        f"splits don't cover full pool: missing {len(pool - union)}, extra {len(union - pool)}"
-    )
+    assert (
+        union == pool
+    ), f"splits don't cover full pool: missing {len(pool - union)}, extra {len(union - pool)}"
 
 
 def test_no_within_split_duplicates(tmp_path):
@@ -141,9 +143,7 @@ def test_no_within_split_duplicates(tmp_path):
             for line in f:
                 rec = json.loads(line)
                 hands.append(tuple(sorted(rec["numbers"])))
-        assert len(hands) == len(set(hands)), (
-            f"{split_name} contains duplicate hands"
-        )
+        assert len(hands) == len(set(hands)), f"{split_name} contains duplicate hands"
 
 
 def test_generate_dataset_rejects_oversized_request(tmp_path):
@@ -161,4 +161,7 @@ def test_is_ood_accepted_with_warning(tmp_path):
         warnings.simplefilter("always")
         generate_dataset(10, os.path.join(str(tmp_path), "ood.jsonl"), is_ood=True)
         assert len(w) == 1
-        assert "is_ood" in str(w[0].message).lower() or "game24" in str(w[0].message).lower()
+        assert (
+            "is_ood" in str(w[0].message).lower()
+            or "game24" in str(w[0].message).lower()
+        )

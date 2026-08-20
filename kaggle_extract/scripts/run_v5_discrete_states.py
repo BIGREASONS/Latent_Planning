@@ -65,7 +65,9 @@ from evaluation.position_leakage import (
 from evaluation.discrete_rollout import evaluate_discrete_rollout, save_discrete_rollout
 
 
-def _load_vq(checkpoint_path: str, hidden_dim: int, num_codes: int, device) -> VQStateQuantizer:
+def _load_vq(
+    checkpoint_path: str, hidden_dim: int, num_codes: int, device
+) -> VQStateQuantizer:
     """Load a VQ from checkpoint, or raise a clear error if missing."""
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(
@@ -103,13 +105,16 @@ def generate_master_report(
     active_ok = usage_stats["active_codes"] >= max(4, 0.1 * num_codes)
     # (b) Transition predictability beyond first-order counts: the MLP must
     # clear the bigram baseline (uniform chance was a misleadingly low bar).
-    predict_ok = predict_metrics["top1_accuracy"] > predict_metrics["bigram_baseline"] + 0.02
+    predict_ok = (
+        predict_metrics["top1_accuracy"] > predict_metrics["bigram_baseline"] + 0.02
+    )
     # (c) Low entropy for a non-trivial subset of states (>= 20% deterministic).
     entropy_ok = entropy["deterministic_state_frac"] >= 0.20
     # (d) Low position leakage: score not far above null + chance.
     leakage_ok = (
         position["position_predictability_score"]
-        <= max(position["permutation_null_accuracy"], position["chance_accuracy"]) + 0.10
+        <= max(position["permutation_null_accuracy"], position["chance_accuracy"])
+        + 0.10
     )
     # (e) Coherent rollout: code-match at depth 1 > 2 * chance.
     if len(rollout_df) and rollout_df["n_samples"].iloc[0] > 0:
@@ -197,7 +202,9 @@ def generate_master_report(
 
     lines.append("## 5. Discrete rollout coherence\n")
     if len(rollout_df) and rollout_df["n_samples"].iloc[0] > 0:
-        lines.append("| depth | code match | cosine | op acc (Probe C) | state acc (Probe A) |")
+        lines.append(
+            "| depth | code match | cosine | op acc (Probe C) | state acc (Probe A) |"
+        )
         lines.append("|---|---|---|---|---|")
         for _, r in rollout_df.iterrows():
             if r["n_samples"] > 0:
@@ -268,28 +275,44 @@ def generate_master_report(
 def main():
     parser = argparse.ArgumentParser(description="Run the V5 discrete-state analysis")
     parser.add_argument(
-        "--reports_dir", type=str, default="reports",
+        "--reports_dir",
+        type=str,
+        default="reports",
         help="Holds trajectories/{train,val,test}.pt; receives v5_* outputs",
     )
     parser.add_argument(
-        "--checkpoints_dir", type=str, default="checkpoints",
+        "--checkpoints_dir",
+        type=str,
+        default="checkpoints",
         help="Holds (or receives) vq_state.pt",
     )
-    parser.add_argument("--vq_checkpoint", type=str, default=None,
-                        help="VQ checkpoint filename (default: vq_state.pt in checkpoints_dir)")
+    parser.add_argument(
+        "--vq_checkpoint",
+        type=str,
+        default=None,
+        help="VQ checkpoint filename (default: vq_state.pt in checkpoints_dir)",
+    )
     parser.add_argument("--num_codes", type=int, default=256)
     parser.add_argument(
-        "--train_vq", action="store_true",
+        "--train_vq",
+        action="store_true",
         help="Train the VQ from trajectories/train.pt if no checkpoint exists "
-             "(otherwise the checkpoint is required)",
+        "(otherwise the checkpoint is required)",
     )
     parser.add_argument("--vq_epochs", type=int, default=50)
     parser.add_argument("--vq_batch_size", type=int, default=256)
     parser.add_argument("--transition_epochs", type=int, default=30)
-    parser.add_argument("--rollout_max_depth", type=int, default=8,
-                        help="0 = dynamic (95th pct of trajectory lengths)")
-    parser.add_argument("--smoke", action="store_true",
-                        help="Mark the run as a smoke test in the report")
+    parser.add_argument(
+        "--rollout_max_depth",
+        type=int,
+        default=8,
+        help="0 = dynamic (95th pct of trajectory lengths)",
+    )
+    parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help="Mark the run as a smoke test in the report",
+    )
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
@@ -318,14 +341,22 @@ def main():
     elif args.train_vq:
         print("[V5/C1] Training VQ from train.pt...")
         vq = train_vq_quantizer(
-            trajs_train, trajs_val,
-            config=VQTrainConfig(num_codes=args.num_codes, epochs=args.vq_epochs,
-                                 batch_size=args.vq_batch_size, seed=args.seed),
+            trajs_train,
+            trajs_val,
+            config=VQTrainConfig(
+                num_codes=args.num_codes,
+                epochs=args.vq_epochs,
+                batch_size=args.vq_batch_size,
+                seed=args.seed,
+            ),
         )
         os.makedirs(args.checkpoints_dir, exist_ok=True)
         torch.save(
-            {"state_dict": vq.state_dict(), "hidden_dim": hidden_dim,
-             "num_codes": vq.num_codes},
+            {
+                "state_dict": vq.state_dict(),
+                "hidden_dim": hidden_dim,
+                "num_codes": vq.num_codes,
+            },
             ckpt_path,
         )
     else:
@@ -356,21 +387,29 @@ def main():
         os.path.join(out, "v5_codebook_usage.csv"),
         os.path.join(out, "v5_codebook_usage.png"),
     )
-    print(f"  active={usage['active_codes']}/{vq.num_codes} "
-          f"gini={usage['collapse_score']:.3f} perplexity={usage['perplexity']:.1f}")
+    print(
+        f"  active={usage['active_codes']}/{vq.num_codes} "
+        f"gini={usage['collapse_score']:.3f} perplexity={usage['perplexity']:.1f}"
+    )
 
     # ------------------------------------------------------------------ #
     # C3 — transition predictability.
     print("[V5/C3] Transition predictability (action-blind MLP)...")
     _, predict = train_code_transition(
-        disc_train, disc_val, num_codes=vq.num_codes,
+        disc_train,
+        disc_val,
+        num_codes=vq.num_codes,
         config=CodeTransitionConfig(epochs=args.transition_epochs, seed=args.seed),
     )
-    save_predictability_metrics(predict, os.path.join(out, "v5_transition_predictability.csv"))
-    print(f"  top1={predict['top1_accuracy']:.3f} "
-          f"(majority={predict['majority_baseline']:.3f}, "
-          f"bigram={predict['bigram_baseline']:.3f}) "
-          f"entropy={predict['predictive_entropy_nats']:.3f}")
+    save_predictability_metrics(
+        predict, os.path.join(out, "v5_transition_predictability.csv")
+    )
+    print(
+        f"  top1={predict['top1_accuracy']:.3f} "
+        f"(majority={predict['majority_baseline']:.3f}, "
+        f"bigram={predict['bigram_baseline']:.3f}) "
+        f"entropy={predict['predictive_entropy_nats']:.3f}"
+    )
 
     # ------------------------------------------------------------------ #
     # C4 — transition entropy.
@@ -380,38 +419,54 @@ def main():
     entropy = conditional_entropy(T, code_freqs=code_freqs)
     active_mask = code_freqs > 0
     save_entropy_report(
-        T, entropy, os.path.join(out, "v5_transition_entropy.csv"),
-        os.path.join(out, "v5_transition_entropy.png"), active_mask=active_mask,
+        T,
+        entropy,
+        os.path.join(out, "v5_transition_entropy.csv"),
+        os.path.join(out, "v5_transition_entropy.png"),
+        active_mask=active_mask,
     )
-    print(f"  global H={entropy['global_entropy']:.3f} "
-          f"det_frac={entropy['deterministic_state_frac']*100:.1f}%")
+    print(
+        f"  global H={entropy['global_entropy']:.3f} "
+        f"det_frac={entropy['deterministic_state_frac']*100:.1f}%"
+    )
 
     # ------------------------------------------------------------------ #
     # C6 — position leakage.
     print("[V5/C6] Position leakage test...")
-    position = evaluate_position_leakage(disc_train, disc_test, vq.num_codes, seed=args.seed)
+    position = evaluate_position_leakage(
+        disc_train, disc_test, vq.num_codes, seed=args.seed
+    )
     save_position_leakage_report(position, os.path.join(out, "v5_position_leakage.csv"))
-    print(f"  score={position['position_predictability_score']:.3f} "
-          f"(null={position['permutation_null_accuracy']:.3f}, "
-          f"chance={position['chance_accuracy']:.3f})")
+    print(
+        f"  score={position['position_predictability_score']:.3f} "
+        f"(null={position['permutation_null_accuracy']:.3f}, "
+        f"chance={position['chance_accuracy']:.3f})"
+    )
 
     # ------------------------------------------------------------------ #
     # C9 — discrete rollout. Fit linear probes A/B/C on the continuous train
     # states so we can decode the rolled-out code -> continuous -> probes.
     print("[V5/C9] Discrete rollout coherence...")
     from evaluation.probes import run_probes
+
     _, _, fitted = run_probes(trajs_train, trajs_test)
     probe_a, probe_b, probe_c = fitted.get("A"), fitted.get("B"), fitted.get("C")
 
     # Re-train the transition model on discrete codes (cheap; reuses C3 model).
     code_model, _ = train_code_transition(
-        disc_train, disc_val, num_codes=vq.num_codes,
+        disc_train,
+        disc_val,
+        num_codes=vq.num_codes,
         config=CodeTransitionConfig(epochs=args.transition_epochs, seed=args.seed),
     )
     max_depth = args.rollout_max_depth if args.rollout_max_depth > 0 else None
     rollout_df = evaluate_discrete_rollout(
-        code_model, vq, disc_test,
-        probe_a=probe_a, probe_b=probe_b, probe_c=probe_c,
+        code_model,
+        vq,
+        disc_test,
+        probe_a=probe_a,
+        probe_b=probe_b,
+        probe_c=probe_c,
         max_depth=max_depth,
     )
     save_discrete_rollout(
@@ -422,10 +477,16 @@ def main():
 
     # ------------------------------------------------------------------ #
     generate_master_report(
-        reports_dir=out, num_codes=vq.num_codes,
-        usage_stats=usage, predict_metrics=predict,
-        entropy=entropy, position=position, rollout_df=rollout_df,
-        hidden_dim=hidden_dim, n_train=len(trajs_train), n_test=len(trajs_test),
+        reports_dir=out,
+        num_codes=vq.num_codes,
+        usage_stats=usage,
+        predict_metrics=predict,
+        entropy=entropy,
+        position=position,
+        rollout_df=rollout_df,
+        hidden_dim=hidden_dim,
+        n_train=len(trajs_train),
+        n_test=len(trajs_test),
         smoke=args.smoke,
     )
     print("\n[V5] Done. v5_* artifacts in", out)

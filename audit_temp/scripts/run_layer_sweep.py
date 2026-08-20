@@ -31,7 +31,8 @@ from models.model_loader import load_model, load_tokenizer
 from data_processing.trajectory_dataset import load_problems, build_trajectories
 from training.train_vq import train_vq_quantizer, VQTrainConfig
 from data_processing.discrete_trajectory_dataset import (
-    encode_trajectories_to_codes, all_codes,
+    encode_trajectories_to_codes,
+    all_codes,
 )
 from evaluation.action_conditioned import extract_action_transitions, run_all_models
 from evaluation.codebook_usage import analyze_codebook_usage
@@ -45,24 +46,43 @@ def _problem_hash(p):
     return (p["target"], tuple(sorted(p["numbers"])))
 
 
-def analyze_layer(model, tokenizer, train_problems, val_problems, layer,
-                  K, vq_epochs, tr_epochs, batch_size, seed):
+def analyze_layer(
+    model,
+    tokenizer,
+    train_problems,
+    val_problems,
+    layer,
+    K,
+    vq_epochs,
+    tr_epochs,
+    batch_size,
+    seed,
+):
     """Full single-layer pipeline -> one metrics row."""
-    train = build_trajectories(model, tokenizer, train_problems, layer=layer,
-                               batch_size=batch_size)
-    val = build_trajectories(model, tokenizer, val_problems, layer=layer,
-                             batch_size=batch_size)
+    train = build_trajectories(
+        model, tokenizer, train_problems, layer=layer, batch_size=batch_size
+    )
+    val = build_trajectories(
+        model, tokenizer, val_problems, layer=layer, batch_size=batch_size
+    )
 
-    vq = train_vq_quantizer(train, val, config=VQTrainConfig(
-        num_codes=K, epochs=vq_epochs, batch_size=256, seed=seed))
+    vq = train_vq_quantizer(
+        train,
+        val,
+        config=VQTrainConfig(num_codes=K, epochs=vq_epochs, batch_size=256, seed=seed),
+    )
     d_tr = encode_trajectories_to_codes(vq, train)
     d_va = encode_trajectories_to_codes(vq, val)
 
     usage = analyze_codebook_usage(all_codes(d_tr), K)
     leak = evaluate_position_leakage(d_tr, d_va, K, seed=seed)
-    res = run_all_models(extract_action_transitions(d_tr),
-                         extract_action_transitions(d_va), K,
-                         epochs=tr_epochs, seed=seed)
+    res = run_all_models(
+        extract_action_transitions(d_tr),
+        extract_action_transitions(d_va),
+        K,
+        epochs=tr_epochs,
+        seed=seed,
+    )
     return {
         "layer": layer,
         "n_train_states": int(all_codes(d_tr).shape[0]),
@@ -95,9 +115,11 @@ def load_anchors(reports_dir):
     ac_path = os.path.join(reports_dir, "action_conditioned.json")
     if os.path.exists(ac_path):
         ac = json.load(open(ac_path, encoding="utf-8"))["fixed_init"]
-        observed = {"det_action": ac["_struct_action"]["det_frac_mass"],
-                    "H_action": ac["_struct_action"]["global_entropy"],
-                    "mlp_z_op": ac["E_mlp_z_op"]["top1"]}
+        observed = {
+            "det_action": ac["_struct_action"]["det_frac_mass"],
+            "H_action": ac["_struct_action"]["global_entropy"],
+            "mlp_z_op": ac["E_mlp_z_op"]["top1"],
+        }
     return floor, ceiling, observed
 
 
@@ -125,46 +147,81 @@ def main():
     tokenizer = load_tokenizer(model_id=args.model)
     num_layers = int(model.config.num_hidden_layers)
 
-    train_problems = load_problems(os.path.join(args.data_dir, "train.jsonl"))[:args.cap_train]
-    val_problems = load_problems(os.path.join(args.data_dir, "val.jsonl"))[:args.cap_val]
+    train_problems = load_problems(os.path.join(args.data_dir, "train.jsonl"))[
+        : args.cap_train
+    ]
+    val_problems = load_problems(os.path.join(args.data_dir, "val.jsonl"))[
+        : args.cap_val
+    ]
     # De-duplicate val against train (same leakage guard as Phase A).
     train_h = {_problem_hash(p) for p in train_problems}
     val_problems = [p for p in val_problems if _problem_hash(p) not in train_h]
-    print(f"[Exp3] {len(train_problems)} train / {len(val_problems)} val problems; "
-          f"layers {layers} (model has {num_layers}).")
+    print(
+        f"[Exp3] {len(train_problems)} train / {len(val_problems)} val problems; "
+        f"layers {layers} (model has {num_layers})."
+    )
 
     rows = []
     for layer in layers:
         print(f"\n[Exp3] === layer {layer} ===")
-        rows.append(analyze_layer(model, tokenizer, train_problems, val_problems,
-                                  layer, args.num_codes, args.vq_epochs,
-                                  args.tr_epochs, args.batch_size, args.seed))
+        rows.append(
+            analyze_layer(
+                model,
+                tokenizer,
+                train_problems,
+                val_problems,
+                layer,
+                args.num_codes,
+                args.vq_epochs,
+                args.tr_epochs,
+                args.batch_size,
+                args.seed,
+            )
+        )
         r = rows[-1]
-        print(f"[Exp3] layer {layer}: det(z,op)={r['det_action']:.3f} "
-              f"H(z'|z,op)={r['H_action']:.3f} MLP(z,op)={r['mlp_z_op']:.3f} "
-              f"pos-leak={r['position_leakage']:.3f}")
+        print(
+            f"[Exp3] layer {layer}: det(z,op)={r['det_action']:.3f} "
+            f"H(z'|z,op)={r['H_action']:.3f} MLP(z,op)={r['mlp_z_op']:.3f} "
+            f"pos-leak={r['position_leakage']:.3f}"
+        )
 
     floor, ceiling, observed = load_anchors(out)
-    config = {"model": args.model, "num_layers": num_layers, "layers": layers,
-              "cap_train": len(train_problems), "cap_val": len(val_problems),
-              "num_codes": args.num_codes, "vq_epochs": args.vq_epochs,
-              "tr_epochs": args.tr_epochs, "seed": args.seed}
+    config = {
+        "model": args.model,
+        "num_layers": num_layers,
+        "layers": layers,
+        "cap_train": len(train_problems),
+        "cap_val": len(val_problems),
+        "num_codes": args.num_codes,
+        "vq_epochs": args.vq_epochs,
+        "tr_epochs": args.tr_epochs,
+        "seed": args.seed,
+    }
 
-    payload = {"config": config, "layers": rows,
-               "floor": floor, "ceiling": ceiling, "observed_layer_-1": observed}
+    payload = {
+        "config": config,
+        "layers": rows,
+        "floor": floor,
+        "ceiling": ceiling,
+        "observed_layer_-1": observed,
+    }
     if floor is not None and ceiling is not None:
         summary = summarize_sweep(rows, floor, ceiling)
         payload["summary"] = summary
         with open(os.path.join(out, "layer_sweep.md"), "w", encoding="utf-8") as f:
             f.write(build_markdown(rows, summary, floor, ceiling, observed, config))
         build_plot(rows, floor, ceiling, os.path.join(out, "layer_sweep.png"))
-        print(f"\n[Exp3] best layer = {summary['best_layer']} "
-              f"(det {summary['best_det_action']:.3f}, "
-              f"{summary['best_pos_det']*100:.0f}% to ceiling); "
-              f"reaches ceiling: {summary['reaches_ceiling']}")
+        print(
+            f"\n[Exp3] best layer = {summary['best_layer']} "
+            f"(det {summary['best_det_action']:.3f}, "
+            f"{summary['best_pos_det']*100:.0f}% to ceiling); "
+            f"reaches ceiling: {summary['reaches_ceiling']}"
+        )
     else:
-        print("\n[Exp3] WARNING: reports/positive_control.json not found — "
-              "writing metrics JSON only (no calibrated report).")
+        print(
+            "\n[Exp3] WARNING: reports/positive_control.json not found — "
+            "writing metrics JSON only (no calibrated report)."
+        )
 
     with open(os.path.join(out, "layer_sweep.json"), "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)

@@ -23,15 +23,17 @@ def _decodable_trajectories(n=12, H=8, vocab=5, T=6, seed=0):
         all_hidden = torch.zeros(T, H)
         for p in range(T - 1):
             all_hidden[p] = token_vecs[ids[p + 1]]
-        trajs.append(Trajectory(
-            all_hidden=all_hidden,
-            input_ids=ids,
-            state_indices=torch.arange(min(3, T)),
-            op_ids=torch.zeros(min(2, T - 1), dtype=torch.long),
-            operands=torch.zeros(min(2, T - 1), 2),
-            numbers=[1, 2, 3, 4, 5, 6],
-            target=10,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=all_hidden,
+                input_ids=ids,
+                state_indices=torch.arange(min(3, T)),
+                op_ids=torch.zeros(min(2, T - 1), dtype=torch.long),
+                operands=torch.zeros(min(2, T - 1), 2),
+                numbers=[1, 2, 3, 4, 5, 6],
+                target=10,
+            )
+        )
     return trajs
 
 

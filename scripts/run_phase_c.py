@@ -15,13 +15,13 @@ import sys
 import argparse
 import numpy as np
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from data_processing.trajectory_dataset import load_trajectories
 from evaluation.intrinsic_noise import (
     gather_state_groups,
     compute_intrinsic_noise,
-    plot_noise_histogram
+    plot_noise_histogram,
 )
 
 
@@ -29,20 +29,20 @@ def generate_phase_c_report(df, top1_acc: float, top5_acc: float, md_path: str):
     """Generate the Phase C report based on Intrinsic Noise metrics."""
     within_df = df[df["type"] == "within"]
     between_df = df[df["type"] == "between"]
-    
+
     w_cos_mean = within_df["cosine"].mean() if not within_df.empty else 0.0
     w_cos_std = within_df["cosine"].std() if not within_df.empty else 0.0
     w_l2_mean = within_df["l2"].mean() if not within_df.empty else 0.0
     w_l2_std = within_df["l2"].std() if not within_df.empty else 0.0
-    
+
     b_cos_mean = between_df["cosine"].mean() if not between_df.empty else 0.0
     b_cos_std = between_df["cosine"].std() if not between_df.empty else 0.0
     b_l2_mean = between_df["l2"].mean() if not between_df.empty else 0.0
     b_l2_std = between_df["l2"].std() if not between_df.empty else 0.0
-    
-    noise_ratio_cos = b_cos_mean / w_cos_mean if w_cos_mean else float('inf')
-    noise_ratio_l2 = w_l2_mean / b_l2_mean if b_l2_mean else float('inf')
-    
+
+    noise_ratio_cos = b_cos_mean / w_cos_mean if w_cos_mean else float("inf")
+    noise_ratio_l2 = w_l2_mean / b_l2_mean if b_l2_mean else float("inf")
+
     lines = []
     lines.append("# Phase C — Intrinsic State Noise Diagnostic\n")
     lines.append(
@@ -52,47 +52,72 @@ def generate_phase_c_report(df, top1_acc: float, top5_acc: float, md_path: str):
         "trajectories that have reached the **exact same symbolic state** "
         "(i.e., same target and same available numbers).\n"
     )
-    
+
     lines.append("## Metrics\n")
     lines.append("### Similarity")
     lines.append("| Metric | Within-State | Between-State | Noise Ratio |")
     lines.append("|---|---|---|---|")
-    lines.append(f"| Cosine Similarity | {w_cos_mean:.3f} ± {w_cos_std:.3f} | {b_cos_mean:.3f} ± {b_cos_std:.3f} | {noise_ratio_cos:.3f} (b/w) |")
-    lines.append(f"| L2 Distance | {w_l2_mean:.3f} ± {w_l2_std:.3f} | {b_l2_mean:.3f} ± {b_l2_std:.3f} | {noise_ratio_l2:.3f} (w/b) |\n")
-    
+    lines.append(
+        f"| Cosine Similarity | {w_cos_mean:.3f} ± {w_cos_std:.3f} | {b_cos_mean:.3f} ± {b_cos_std:.3f} | {noise_ratio_cos:.3f} (b/w) |"
+    )
+    lines.append(
+        f"| L2 Distance | {w_l2_mean:.3f} ± {w_l2_std:.3f} | {b_l2_mean:.3f} ± {b_l2_std:.3f} | {noise_ratio_l2:.3f} (w/b) |\n"
+    )
+
     lines.append("### Nearest Neighbor Symbolic State Retrieval")
-    lines.append("For each hidden state, we query its nearest neighbor (by cosine similarity) from a **different trajectory**.")
+    lines.append(
+        "For each hidden state, we query its nearest neighbor (by cosine similarity) from a **different trajectory**."
+    )
     lines.append(f"- **Top-1 Retrieval Accuracy**: {top1_acc * 100:.1f}%")
     lines.append(f"- **Top-5 Retrieval Accuracy**: {top5_acc * 100:.1f}%\n")
-    
+
     lines.append("## Interpretation Rules\n")
-    lines.append("- **Case A**: If `within cosine >> between cosine`, the representation behaves like a stable planning state.")
-    lines.append("- **Case C**: If `within cosine only slightly exceeds between cosine`, the representation is partially Markovian but noisy.")
-    lines.append("- **Case B**: If `within cosine ≈ between cosine`, the representation is dominated by trajectory history.\n")
-    
+    lines.append(
+        "- **Case A**: If `within cosine >> between cosine`, the representation behaves like a stable planning state."
+    )
+    lines.append(
+        "- **Case C**: If `within cosine only slightly exceeds between cosine`, the representation is partially Markovian but noisy."
+    )
+    lines.append(
+        "- **Case B**: If `within cosine ≈ between cosine`, the representation is dominated by trajectory history.\n"
+    )
+
     lines.append("## Final Verdict\n")
-    
+
     if top1_acc > 0.85:
         lines.append("**Representation appears highly stable.** (Case A)")
-        lines.append("\nThe model maps identical symbolic states to very tight latent clusters regardless of history. Transition learning should be straightforward.")
+        lines.append(
+            "\nThe model maps identical symbolic states to very tight latent clusters regardless of history. Transition learning should be straightforward."
+        )
     elif top1_acc > 0.40:
         lines.append("**Representation is partially Markovian but noisy.** (Case C)")
-        lines.append("\nThere is clear clustering by symbolic state, but significant history dependence remains. Transition learning may require stronger architectures.")
+        lines.append(
+            "\nThere is clear clustering by symbolic state, but significant history dependence remains. Transition learning may require stronger architectures."
+        )
     else:
         lines.append("**Representation appears highly history-dependent.** (Case B)")
-        lines.append("\nThe model's hidden states for identical symbolic states are nearly as far apart as completely unrelated states. This is the true bottleneck; Oracle dynamics cannot save a representation that fails to consistently encode the task state.")
+        lines.append(
+            "\nThe model's hidden states for identical symbolic states are nearly as far apart as completely unrelated states. This is the true bottleneck; Oracle dynamics cannot save a representation that fails to consistently encode the task state."
+        )
 
     lines.append("\n---")
     lines.append("\n*Generated by `scripts/run_phase_c.py`*")
-    
+
     os.makedirs(os.path.dirname(os.path.abspath(md_path)), exist_ok=True)
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Phase C: Intrinsic State Noise Diagnostic")
-    parser.add_argument("--reports_dir", type=str, default="reports", help="Directory containing Phase A outputs")
+    parser = argparse.ArgumentParser(
+        description="Phase C: Intrinsic State Noise Diagnostic"
+    )
+    parser.add_argument(
+        "--reports_dir",
+        type=str,
+        default="reports",
+        help="Directory containing Phase A outputs",
+    )
     args = parser.parse_args()
 
     out = args.reports_dir
@@ -113,15 +138,19 @@ def main():
     print("[Phase C] Grouping hidden states by symbolic state...")
     state_groups = gather_state_groups(all_trajs)
     num_valid_states = sum(1 for v in state_groups.values() if len(v) >= 2)
-    print(f"  Found {len(state_groups)} shared symbolic states ({num_valid_states} with >= 2 instances).")
+    print(
+        f"  Found {len(state_groups)} shared symbolic states ({num_valid_states} with >= 2 instances)."
+    )
 
     if num_valid_states < 2:
-        print("ERROR: Not enough shared symbolic states across trajectories to compute noise.")
+        print(
+            "ERROR: Not enough shared symbolic states across trajectories to compute noise."
+        )
         sys.exit(1)
 
     print("[Phase C] Computing within-state and between-state similarities...")
     df, top1_acc, top5_acc = compute_intrinsic_noise(state_groups)
-    
+
     csv_path = os.path.join(out, "intrinsic_noise.csv")
     df.to_csv(csv_path, index=False)
     print(f"  Saved raw metrics to {csv_path}")
@@ -131,12 +160,16 @@ def main():
     print("[Phase C] Generating histograms and report...")
     png_path = os.path.join(out, "intrinsic_noise_histogram.png")
     plot_noise_histogram(df, png_path)
-    
+
     md_path = os.path.join(out, "intrinsic_noise_report.md")
     generate_phase_c_report(df, top1_acc, top5_acc, md_path)
 
     print("\n[Phase C] Done. Artifacts:")
-    for name in ["intrinsic_noise.csv", "intrinsic_noise_histogram.png", "intrinsic_noise_report.md"]:
+    for name in [
+        "intrinsic_noise.csv",
+        "intrinsic_noise_histogram.png",
+        "intrinsic_noise_report.md",
+    ]:
         print(f"  - {os.path.join(out, name)}")
 
 

@@ -63,9 +63,7 @@ def build_transfer_trajectory(
 
     end_chars = _state_end_chars(header, steps)
     try:
-        state_indices = [
-            _token_index_for_char_end(offsets, ec) for ec in end_chars
-        ]
+        state_indices = [_token_index_for_char_end(offsets, ec) for ec in end_chars]
     except ValueError:
         return None
     state_indices = torch.tensor(state_indices, dtype=torch.long)
@@ -113,8 +111,9 @@ def build_transfer_trajectories(
             continue
 
         texts = [p["problem"] + "\n".join(p["solution"]) for p in valid]
-        enc = tokenizer(texts, padding=True, return_tensors="pt",
-                        return_offsets_mapping=True)
+        enc = tokenizer(
+            texts, padding=True, return_tensors="pt", return_offsets_mapping=True
+        )
         offset_mappings = enc.pop("offset_mapping").tolist()
         attention_mask = enc["attention_mask"]
         enc = {k: v.to(model.device) for k, v in enc.items()}

@@ -114,22 +114,27 @@ def generate_dataset(
         actions_arr = np.asarray(actions, dtype=np.int64)
 
         if structured:
-            proto_idx = states_arr                       # embedding tracks the true state
+            proto_idx = states_arr  # embedding tracks the true state
         else:  # noise floor: same well-separated prototypes, but assigned at
             # random per occurrence — codes stay spread (no VQ collapse) yet
             # carry no information about the walk.
             proto_idx = rng.randint(0, num_states, size=n_states)
-        emb = protos[proto_idx] + rng.randn(n_states, hidden_dim).astype(np.float32) * noise
+        emb = (
+            protos[proto_idx]
+            + rng.randn(n_states, hidden_dim).astype(np.float32) * noise
+        )
 
-        trajs.append(Trajectory(
-            all_hidden=torch.from_numpy(emb),
-            input_ids=torch.zeros(n_states, dtype=torch.long),
-            state_indices=torch.arange(n_states, dtype=torch.long),
-            op_ids=torch.from_numpy(actions_arr).long(),
-            operands=torch.zeros(max(n_states - 1, 0), 2),
-            numbers=[0],
-            target=0,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=torch.from_numpy(emb),
+                input_ids=torch.zeros(n_states, dtype=torch.long),
+                state_indices=torch.arange(n_states, dtype=torch.long),
+                op_ids=torch.from_numpy(actions_arr).long(),
+                operands=torch.zeros(max(n_states - 1, 0), 2),
+                numbers=[0],
+                target=0,
+            )
+        )
         true_states.append(states_arr)
     return trajs, true_states
 

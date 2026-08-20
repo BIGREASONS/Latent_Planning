@@ -132,7 +132,7 @@ def build_state_records(trajs):
         N = traj.num_steps
         numbers = list(traj.numbers)
         operands = traj.operands  # (N, 2)
-        states = traj.states      # (N+1, H)
+        states = traj.states  # (N+1, H)
         for d in range(N + 1):
             info = sym_list[d]
             if info is None:
@@ -223,22 +223,34 @@ def _mean_ci(values):
     """
     n = len(values)
     if n == 0:
-        return {"mean": float("nan"), "ci_lo": float("nan"),
-                "ci_hi": float("nan"), "n": 0}
+        return {
+            "mean": float("nan"),
+            "ci_lo": float("nan"),
+            "ci_hi": float("nan"),
+            "n": 0,
+        }
     arr = np.asarray(values, dtype=np.float64)
     mean = float(arr.mean())
     if n == 1:
         return {"mean": mean, "ci_lo": mean, "ci_hi": mean, "n": 1}
     se = float(arr.std(ddof=1)) / np.sqrt(n)
-    return {"mean": mean, "ci_lo": mean - _Z95 * se,
-            "ci_hi": mean + _Z95 * se, "n": int(n)}
+    return {
+        "mean": mean,
+        "ci_lo": mean - _Z95 * se,
+        "ci_hi": mean + _Z95 * se,
+        "n": int(n),
+    }
 
 
 def _proportion_ci(k, n):
     """Wilson 95% CI for a binomial proportion (used for coverage rate)."""
     if n == 0:
-        return {"rate": float("nan"), "ci_lo": float("nan"),
-                "ci_hi": float("nan"), "n": 0}
+        return {
+            "rate": float("nan"),
+            "ci_lo": float("nan"),
+            "ci_hi": float("nan"),
+            "n": 0,
+        }
     p = k / n
     denom = 1.0 + _Z95 * _Z95 / n
     center = (p + _Z95 * _Z95 / (2 * n)) / denom
@@ -281,9 +293,9 @@ def transition_predict_a(model, probe_a, h_mat, op_arr, operands_arr, chunk=4096
     """Apply T(h, a) over batched inputs, return Probe-A predictions (m, 4)."""
     preds = []
     for s in range(0, h_mat.shape[0], chunk):
-        ht = torch.tensor(h_mat[s:s + chunk], dtype=torch.float32)
-        op = torch.tensor(op_arr[s:s + chunk], dtype=torch.long)
-        oper = torch.tensor(operands_arr[s:s + chunk], dtype=torch.float32)
+        ht = torch.tensor(h_mat[s : s + chunk], dtype=torch.float32)
+        op = torch.tensor(op_arr[s : s + chunk], dtype=torch.long)
+        oper = torch.tensor(operands_arr[s : s + chunk], dtype=torch.float32)
         out = model(ht, op, oper).cpu().numpy()
         preds.append(probe_a.predict(out))
     return np.concatenate(preds, axis=0) if preds else np.zeros((0, 4), dtype=np.int64)
@@ -301,9 +313,15 @@ def oracle0_metrics(probes, test_trajs):
     predD = probes["D"].predict(X)
     return {
         "n": int(X.shape[0]),
-        "probeA_exact": _mean([a_exact(predA[i], te["A"][i]) for i in range(len(predA))]),
-        "probeA_per_label": _mean([a_per_label(predA[i], te["A"][i]) for i in range(len(predA))]),
-        "probeA_jaccard": _mean([a_jaccard(predA[i], te["A"][i]) for i in range(len(predA))]),
+        "probeA_exact": _mean(
+            [a_exact(predA[i], te["A"][i]) for i in range(len(predA))]
+        ),
+        "probeA_per_label": _mean(
+            [a_per_label(predA[i], te["A"][i]) for i in range(len(predA))]
+        ),
+        "probeA_jaccard": _mean(
+            [a_jaccard(predA[i], te["A"][i]) for i in range(len(predA))]
+        ),
         "probeB_accuracy": float(np.mean(predB == te["B"])),
         "probeC_accuracy": float(np.mean(predC == te["C"])),
         "probeD_accuracy": float(np.mean(predD == te["D"])),
@@ -313,7 +331,9 @@ def oracle0_metrics(probes, test_trajs):
 # --------------------------------------------------------------------------- #
 # Audit core (Oracle 1, 2A, 2B)
 # --------------------------------------------------------------------------- #
-def run_audit(records, groups, probes, transition_model, max_partners, smoke_pairs=False):
+def run_audit(
+    records, groups, probes, transition_model, max_partners, smoke_pairs=False
+):
     H = records[0]["h"].shape[0] if records else 0
 
     # Precompute Probe predictions on every state instance (one batched call).
@@ -324,7 +344,8 @@ def run_audit(records, groups, probes, transition_model, max_partners, smoke_pai
         predC = probes["C"].predict(h_mat)
         predD = probes["D"].predict(h_mat)
     else:
-        predA = np.zeros((0, 4)); predB = predC = predD = np.zeros((0,))
+        predA = np.zeros((0, 4))
+        predB = predC = predD = np.zeros((0,))
     for i, r in enumerate(records):
         r["predA"] = predA[i]
         r["predB"] = int(predB[i])
@@ -338,7 +359,8 @@ def run_audit(records, groups, probes, transition_model, max_partners, smoke_pai
     for ai in anchors:
         a = records[ai]
         parts = [
-            pi for pi in groups[a["sym"]]
+            pi
+            for pi in groups[a["sym"]]
             if records[pi]["traj_idx"] != a["traj_idx"]
             and records[pi]["hist"] != a["hist"]
         ]
@@ -356,9 +378,14 @@ def run_audit(records, groups, probes, transition_model, max_partners, smoke_pai
     }
 
     # ---- Oracle 1 (true-state transition, full has_next pool) ----
-    o1 = {"probeA_exact": float("nan"), "probeA_per_label": float("nan"),
-          "probeA_jaccard": float("nan"), "n": len(anchors),
-          "probeA_exact_ci_lo": float("nan"), "probeA_exact_ci_hi": float("nan")}
+    o1 = {
+        "probeA_exact": float("nan"),
+        "probeA_per_label": float("nan"),
+        "probeA_jaccard": float("nan"),
+        "n": len(anchors),
+        "probeA_exact_ci_lo": float("nan"),
+        "probeA_exact_ci_hi": float("nan"),
+    }
     o1_by_anchor = {}  # ai -> (exact, per_label, jaccard) for matched delta
     if anchors and transition_model is not None:
         hm = np.stack([records[ai]["h"] for ai in anchors])
@@ -368,11 +395,19 @@ def run_audit(records, groups, probes, transition_model, max_partners, smoke_pai
         ex, pl, jc = [], [], []
         for k, ai in enumerate(anchors):
             tgt = records[ai]["next_gtA"]
-            e = a_exact(pa[k], tgt); p = a_per_label(pa[k], tgt); j = a_jaccard(pa[k], tgt)
+            e = a_exact(pa[k], tgt)
+            p = a_per_label(pa[k], tgt)
+            j = a_jaccard(pa[k], tgt)
             o1_by_anchor[ai] = (e, p, j)
-            ex.append(e); pl.append(p); jc.append(j)
-        o1 = {"probeA_exact": _mean(ex), "probeA_per_label": _mean(pl),
-              "probeA_jaccard": _mean(jc), "n": len(anchors)}
+            ex.append(e)
+            pl.append(p)
+            jc.append(j)
+        o1 = {
+            "probeA_exact": _mean(ex),
+            "probeA_per_label": _mean(pl),
+            "probeA_jaccard": _mean(jc),
+            "n": len(anchors),
+        }
         o1_ci = _mean_ci(ex)
         o1["probeA_exact_ci_lo"] = o1_ci["ci_lo"]
         o1["probeA_exact_ci_hi"] = o1_ci["ci_hi"]
@@ -389,7 +424,9 @@ def run_audit(records, groups, probes, transition_model, max_partners, smoke_pai
         counts = _counts_by_delta(pairs)
         print(f"[Smoke Pairs] Built {len(pairs)} pairs.")
         print(f"[Smoke Pairs] Delta counts: {counts}")
-        import sys; sys.exit(0)
+        import sys
+
+        sys.exit(0)
 
     # ---- Oracle 2A (representation agreement on h vs h') ----
     a2 = {}  # metric -> stratified dict
@@ -400,9 +437,15 @@ def run_audit(records, groups, probes, transition_model, max_partners, smoke_pai
         acc["probeA_pred_per_label"].append((dd, a_per_label(a["predA"], p["predA"])))
         acc["probeA_pred_jaccard"].append((dd, a_jaccard(a["predA"], p["predA"])))
         acc["probeB_pred_abs_diff"].append((dd, abs(a["predB"] - p["predB"])))
-        acc["probeB_pred_agreement"].append((dd, 1.0 if a["predB"] == p["predB"] else 0.0))
-        acc["probeC_pred_agreement"].append((dd, 1.0 if a["predC"] == p["predC"] else 0.0))
-        acc["probeD_pred_agreement"].append((dd, 1.0 if a["predD"] == p["predD"] else 0.0))
+        acc["probeB_pred_agreement"].append(
+            (dd, 1.0 if a["predB"] == p["predB"] else 0.0)
+        )
+        acc["probeC_pred_agreement"].append(
+            (dd, 1.0 if a["predC"] == p["predC"] else 0.0)
+        )
+        acc["probeD_pred_agreement"].append(
+            (dd, 1.0 if a["predD"] == p["predD"] else 0.0)
+        )
         # Ground-truth label comparison for the same symbolic state
         acc["gtA_exact"].append((dd, a_exact(a["gtA"], p["gtA"])))
         acc["gtA_per_label"].append((dd, a_per_label(a["gtA"], p["gtA"])))
@@ -429,7 +472,9 @@ def run_audit(records, groups, probes, transition_model, max_partners, smoke_pai
         pa = transition_predict_a(transition_model, probes["A"], hm, opm, oprm)
         for k, (ai, pi, dd) in enumerate(pairs):
             tgt = records[ai]["next_gtA"]
-            e = a_exact(pa[k], tgt); pl = a_per_label(pa[k], tgt); jc = a_jaccard(pa[k], tgt)
+            e = a_exact(pa[k], tgt)
+            pl = a_per_label(pa[k], tgt)
+            jc = a_jaccard(pa[k], tgt)
             b2_acc["probeA_exact"].append((dd, e))
             b2_acc["probeA_per_label"].append((dd, pl))
             b2_acc["probeA_jaccard"].append((dd, jc))
@@ -470,17 +515,32 @@ def _fmt(v):
 
 def write_metrics_csv(o0, res, path):
     import csv
+
     rows = [("oracle", "metric", "delta_depth", "value", "n", "ci_lo", "ci_hi")]
 
-    for m in ["probeA_exact", "probeA_per_label", "probeA_jaccard",
-              "probeB_accuracy", "probeC_accuracy", "probeD_accuracy"]:
+    for m in [
+        "probeA_exact",
+        "probeA_per_label",
+        "probeA_jaccard",
+        "probeB_accuracy",
+        "probeC_accuracy",
+        "probeD_accuracy",
+    ]:
         rows.append(("oracle0", m, "all", o0[m], o0["n"], "", ""))
 
     # Coverage rate with its 95% CI (Wilson interval).
     c = res["coverage"]
-    rows.append(("coverage", "coverage_rate", "all", c["coverage_rate"],
-                 c["total_states"], c["coverage_rate_ci_lo"],
-                 c["coverage_rate_ci_hi"]))
+    rows.append(
+        (
+            "coverage",
+            "coverage_rate",
+            "all",
+            c["coverage_rate"],
+            c["total_states"],
+            c["coverage_rate_ci_lo"],
+            c["coverage_rate_ci_hi"],
+        )
+    )
 
     o1 = res["oracle1"]
     for m in ["probeA_exact", "probeA_per_label", "probeA_jaccard"]:
@@ -493,28 +553,50 @@ def write_metrics_csv(o0, res, path):
     for m in sorted(a2):
         for dd, val in a2[m].items():
             ci = a2ci.get(m, {}) if dd == "all" else {}
-            rows.append(("oracle2a", m, dd, val, a2c.get(dd, ""),
-                         ci.get("ci_lo", ""), ci.get("ci_hi", "")))
+            rows.append(
+                (
+                    "oracle2a",
+                    m,
+                    dd,
+                    val,
+                    a2c.get(dd, ""),
+                    ci.get("ci_lo", ""),
+                    ci.get("ci_hi", ""),
+                )
+            )
 
     b2, b2c = res["oracle2b"], res["oracle2b_counts"]
     b2ci = res.get("oracle2b_ci", {})
     for m in sorted(b2):
         for dd, val in b2[m].items():
             ci = b2ci.get(m, {}) if dd == "all" else {}
-            rows.append(("oracle2b", m, dd, val, b2c.get(dd, ""),
-                         ci.get("ci_lo", ""), ci.get("ci_hi", "")))
+            rows.append(
+                (
+                    "oracle2b",
+                    m,
+                    dd,
+                    val,
+                    b2c.get(dd, ""),
+                    ci.get("ci_lo", ""),
+                    ci.get("ci_hi", ""),
+                )
+            )
 
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         for r in rows:
-            w.writerow([
-                r[0], r[1], r[2],
-                _fmt(r[3]) if isinstance(r[3], float) else r[3],
-                r[4],
-                _fmt(r[5]) if isinstance(r[5], float) else r[5],
-                _fmt(r[6]) if isinstance(r[6], float) else r[6],
-            ])
+            w.writerow(
+                [
+                    r[0],
+                    r[1],
+                    r[2],
+                    _fmt(r[3]) if isinstance(r[3], float) else r[3],
+                    r[4],
+                    _fmt(r[5]) if isinstance(r[5], float) else r[5],
+                    _fmt(r[6]) if isinstance(r[6], float) else r[6],
+                ]
+            )
 
 
 def write_coverage_md(res, path):
@@ -525,7 +607,9 @@ def write_coverage_md(res, path):
     lines.append("|---|---|")
     lines.append(f"| total_states | {c['total_states']} |")
     lines.append(f"| states_with_swap_partner | {c['states_with_swap_partner']} |")
-    lines.append(f"| states_without_swap_partner | {c['states_without_swap_partner']} |")
+    lines.append(
+        f"| states_without_swap_partner | {c['states_without_swap_partner']} |"
+    )
     lines.append(f"| coverage_rate | {_fmt(c['coverage_rate'])} |")
     lines.append(
         f"| coverage_rate_95ci | [{_fmt(c['coverage_rate_ci_lo'])}, "
@@ -569,7 +653,11 @@ def _strat_table(title, strat, metrics):
 
 def _ci_table(title, ci, metrics):
     """95% CI table (all-pairs aggregate) for the given metrics."""
-    out = [f"## {title}\n", "| metric | mean | ci_lo | ci_hi | n |", "|---|---|---|---|---|"]
+    out = [
+        f"## {title}\n",
+        "| metric | mean | ci_lo | ci_hi | n |",
+        "|---|---|---|---|---|",
+    ]
     for m in metrics:
         c = ci.get(m, {})
         out.append(
@@ -592,70 +680,116 @@ def write_summary_md(o0, res, path):
     lines = ["# Oracle Audit — Summary\n"]
 
     # 1. Coverage
-    lines += _kv_table("1. Coverage", [
-        ("total_states", c["total_states"]),
-        ("states_with_swap_partner", c["states_with_swap_partner"]),
-        ("states_without_swap_partner", c["states_without_swap_partner"]),
-        ("coverage_rate", c["coverage_rate"]),
-        ("coverage_rate_ci_lo", c["coverage_rate_ci_lo"]),
-        ("coverage_rate_ci_hi", c["coverage_rate_ci_hi"]),
-        ("total_state_instances", c["total_state_instances"]),
-    ])
+    lines += _kv_table(
+        "1. Coverage",
+        [
+            ("total_states", c["total_states"]),
+            ("states_with_swap_partner", c["states_with_swap_partner"]),
+            ("states_without_swap_partner", c["states_without_swap_partner"]),
+            ("coverage_rate", c["coverage_rate"]),
+            ("coverage_rate_ci_lo", c["coverage_rate_ci_lo"]),
+            ("coverage_rate_ci_hi", c["coverage_rate_ci_hi"]),
+            ("total_state_instances", c["total_state_instances"]),
+        ],
+    )
 
     # 2. Oracle 0
-    lines += _kv_table("2. Oracle 0 — Teacher Ceiling", [
-        ("probeA_exact", o0["probeA_exact"]),
-        ("probeA_per_label", o0["probeA_per_label"]),
-        ("probeA_jaccard", o0["probeA_jaccard"]),
-        ("probeB_accuracy", o0["probeB_accuracy"]),
-        ("probeC_accuracy", o0["probeC_accuracy"]),
-        ("probeD_accuracy", o0["probeD_accuracy"]),
-        ("n", o0["n"]),
-    ])
+    lines += _kv_table(
+        "2. Oracle 0 — Teacher Ceiling",
+        [
+            ("probeA_exact", o0["probeA_exact"]),
+            ("probeA_per_label", o0["probeA_per_label"]),
+            ("probeA_jaccard", o0["probeA_jaccard"]),
+            ("probeB_accuracy", o0["probeB_accuracy"]),
+            ("probeC_accuracy", o0["probeC_accuracy"]),
+            ("probeD_accuracy", o0["probeD_accuracy"]),
+            ("n", o0["n"]),
+        ],
+    )
 
     # 3. Oracle 1
-    lines += _kv_table("3. Oracle 1 — True-State Transition", [
-        ("probeA_exact", o1["probeA_exact"]),
-        ("probeA_exact_ci_lo", o1["probeA_exact_ci_lo"]),
-        ("probeA_exact_ci_hi", o1["probeA_exact_ci_hi"]),
-        ("probeA_per_label", o1["probeA_per_label"]),
-        ("probeA_jaccard", o1["probeA_jaccard"]),
-        ("n", o1["n"]),
-    ])
+    lines += _kv_table(
+        "3. Oracle 1 — True-State Transition",
+        [
+            ("probeA_exact", o1["probeA_exact"]),
+            ("probeA_exact_ci_lo", o1["probeA_exact_ci_lo"]),
+            ("probeA_exact_ci_hi", o1["probeA_exact_ci_hi"]),
+            ("probeA_per_label", o1["probeA_per_label"]),
+            ("probeA_jaccard", o1["probeA_jaccard"]),
+            ("n", o1["n"]),
+        ],
+    )
 
     # 4. Oracle 2A agreement (stratified)
     lines += _strat_table(
-        "4. Oracle 2A — Representation Agreement", a2,
-        ["probeA_pred_exact", "probeA_pred_per_label", "probeA_pred_jaccard",
-         "probeB_pred_abs_diff", "probeB_pred_agreement",
-         "probeC_pred_agreement", "probeD_pred_agreement",
-         "gtA_exact", "gtA_per_label", "gtA_jaccard",
-         "gtB_abs_diff", "gtB_agreement", "gtC_agreement", "gtD_agreement"])
+        "4. Oracle 2A — Representation Agreement",
+        a2,
+        [
+            "probeA_pred_exact",
+            "probeA_pred_per_label",
+            "probeA_pred_jaccard",
+            "probeB_pred_abs_diff",
+            "probeB_pred_agreement",
+            "probeC_pred_agreement",
+            "probeD_pred_agreement",
+            "gtA_exact",
+            "gtA_per_label",
+            "gtA_jaccard",
+            "gtB_abs_diff",
+            "gtB_agreement",
+            "gtC_agreement",
+            "gtD_agreement",
+        ],
+    )
 
     # 4b. Oracle 2A agreement — 95% CI (all pairs)
     lines += _ci_table(
-        "4b. Oracle 2A — Representation Agreement (95% CI, all pairs)", a2ci,
-        ["probeA_pred_exact", "probeA_pred_per_label", "probeA_pred_jaccard",
-         "probeB_pred_abs_diff", "probeB_pred_agreement",
-         "probeC_pred_agreement", "probeD_pred_agreement",
-         "gtA_exact", "gtA_per_label", "gtA_jaccard",
-         "gtB_abs_diff", "gtB_agreement", "gtC_agreement", "gtD_agreement"])
+        "4b. Oracle 2A — Representation Agreement (95% CI, all pairs)",
+        a2ci,
+        [
+            "probeA_pred_exact",
+            "probeA_pred_per_label",
+            "probeA_pred_jaccard",
+            "probeB_pred_abs_diff",
+            "probeB_pred_agreement",
+            "probeC_pred_agreement",
+            "probeD_pred_agreement",
+            "gtA_exact",
+            "gtA_per_label",
+            "gtA_jaccard",
+            "gtB_abs_diff",
+            "gtB_agreement",
+            "gtC_agreement",
+            "gtD_agreement",
+        ],
+    )
 
     # 5. Oracle 2B transition metrics (stratified)
     lines += _strat_table(
-        "5. Oracle 2B — Swapped-State Transition", b2,
-        ["probeA_exact", "probeA_per_label", "probeA_jaccard"])
+        "5. Oracle 2B — Swapped-State Transition",
+        b2,
+        ["probeA_exact", "probeA_per_label", "probeA_jaccard"],
+    )
 
     # 6. Oracle 2B delta metrics (stratified)
     lines += _strat_table(
-        "6. Oracle 2B — Delta", b2,
-        ["oracle1_paired_exact", "delta_transition_accuracy"])
+        "6. Oracle 2B — Delta",
+        b2,
+        ["oracle1_paired_exact", "delta_transition_accuracy"],
+    )
 
     # 6b. Oracle 2B transition + delta — 95% CI (all pairs)
     lines += _ci_table(
-        "6b. Oracle 2B — Transition + Delta (95% CI, all pairs)", b2ci,
-        ["probeA_exact", "probeA_per_label", "probeA_jaccard",
-         "oracle1_paired_exact", "delta_transition_accuracy"])
+        "6b. Oracle 2B — Transition + Delta (95% CI, all pairs)",
+        b2ci,
+        [
+            "probeA_exact",
+            "probeA_per_label",
+            "probeA_jaccard",
+            "oracle1_paired_exact",
+            "delta_transition_accuracy",
+        ],
+    )
 
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -676,25 +810,45 @@ def main():
     ap = argparse.ArgumentParser(description="Oracle Ceiling Audit")
     ap.add_argument("--reports_dir", default="reports")
     ap.add_argument("--out_dir", default="reports")
-    ap.add_argument("--train_traj", default=None,
-                    help="Trajectory file used to fit probes (default <reports>/trajectories/train.pt)")
-    ap.add_argument("--audit", choices=["test", "val", "train", "all", "train_test"],
-                    default="test",
-                    help="Split providing audit anchors + swap partners (held out from "
-                         "probe fit). 'train_test' pools the train and test trajectories "
-                         "as the anchor/partner pool.")
-    ap.add_argument("--transition_ckpt", default=None,
-                    help="Action-conditioned transition checkpoint "
-                         "(default <reports>/transition_model_action.pt)")
-    ap.add_argument("--max_partners", type=int, default=50,
-                    help="Cap on swap partners per anchor (bounds pair count)")
-    ap.add_argument("--smoke_pairs", action="store_true",
-                    help="Lightweight validation: build pairs, run count, then exit.")
+    ap.add_argument(
+        "--train_traj",
+        default=None,
+        help="Trajectory file used to fit probes (default <reports>/trajectories/train.pt)",
+    )
+    ap.add_argument(
+        "--audit",
+        choices=["test", "val", "train", "all", "train_test"],
+        default="test",
+        help="Split providing audit anchors + swap partners (held out from "
+        "probe fit). 'train_test' pools the train and test trajectories "
+        "as the anchor/partner pool.",
+    )
+    ap.add_argument(
+        "--transition_ckpt",
+        default=None,
+        help="Action-conditioned transition checkpoint "
+        "(default <reports>/transition_model_action.pt)",
+    )
+    ap.add_argument(
+        "--max_partners",
+        type=int,
+        default=50,
+        help="Cap on swap partners per anchor (bounds pair count)",
+    )
+    ap.add_argument(
+        "--smoke_pairs",
+        action="store_true",
+        help="Lightweight validation: build pairs, run count, then exit.",
+    )
     args = ap.parse_args()
 
-    train_path = args.train_traj or os.path.join(args.reports_dir, "trajectories", "train.pt")
+    train_path = args.train_traj or os.path.join(
+        args.reports_dir, "trajectories", "train.pt"
+    )
     audit_paths = _resolve_audit_paths(args.reports_dir, args.audit)
-    ckpt_path = args.transition_ckpt or os.path.join(args.reports_dir, "transition_model_action.pt")
+    ckpt_path = args.transition_ckpt or os.path.join(
+        args.reports_dir, "transition_model_action.pt"
+    )
 
     if not os.path.exists(train_path):
         print(f"ERROR: train trajectories not found: {train_path}")
@@ -719,15 +873,19 @@ def main():
         print(f"[Oracle Audit] Loading transition model: {ckpt_path}")
         transition_model = load_transition_model(ckpt_path)
     else:
-        print(f"WARNING: transition checkpoint missing ({ckpt_path}); "
-              "Oracle 1 / 2B metrics will be nan.")
+        print(
+            f"WARNING: transition checkpoint missing ({ckpt_path}); "
+            "Oracle 1 / 2B metrics will be nan."
+        )
 
     print("[Oracle Audit] Oracle 0 (teacher ceiling)...")
     o0 = oracle0_metrics(probes, audit_trajs)
 
     print("[Oracle Audit] Building state records and swap pairs...")
     records, groups = build_state_records(audit_trajs)
-    res = run_audit(records, groups, probes, transition_model, args.max_partners, args.smoke_pairs)
+    res = run_audit(
+        records, groups, probes, transition_model, args.max_partners, args.smoke_pairs
+    )
 
     os.makedirs(args.out_dir, exist_ok=True)
     csv_path = os.path.join(args.out_dir, "oracle_audit_metrics.csv")
@@ -740,8 +898,10 @@ def main():
 
     c = res["coverage"]
     print("\n[Oracle Audit] Done.")
-    print(f"  coverage: {c['states_with_swap_partner']}/{c['total_states']} anchors "
-          f"with a swap partner (rate={c['coverage_rate']:.3f})")
+    print(
+        f"  coverage: {c['states_with_swap_partner']}/{c['total_states']} anchors "
+        f"with a swap partner (rate={c['coverage_rate']:.3f})"
+    )
     for pth in (csv_path, cov_path, sum_path):
         print(f"  - {pth}")
 

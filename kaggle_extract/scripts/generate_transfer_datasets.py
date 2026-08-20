@@ -125,8 +125,10 @@ def _graph_problem(rng: random.Random) -> Dict[str, Any]:
         cur = prev[cur]
     path.reverse()
 
-    steps = [f"Graph edges: " + ", ".join(
-        f"{u}-{v}={w}" for u in adj for v, w in adj[u].items() if u < v)]
+    steps = [
+        f"Graph edges: "
+        + ", ".join(f"{u}-{v}={w}" for u in adj for v, w in adj[u].items() if u < v)
+    ]
     steps.append(f"Start at {src}, end at {dst}.")
     for i in range(len(path) - 1):
         w = adj[path[i]][path[i + 1]]
@@ -143,7 +145,11 @@ def _graph_problem(rng: random.Random) -> Dict[str, Any]:
     }
 
 
-_GENERATORS = {"algebra": _algebra_problem, "logic": _logic_problem, "graph": _graph_problem}
+_GENERATORS = {
+    "algebra": _algebra_problem,
+    "logic": _logic_problem,
+    "graph": _graph_problem,
+}
 
 
 def generate_transfer_dataset(
@@ -161,7 +167,9 @@ def generate_transfer_dataset(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate V5 cross-domain reasoning datasets")
+    parser = argparse.ArgumentParser(
+        description="Generate V5 cross-domain reasoning datasets"
+    )
     parser.add_argument("--domains", nargs="+", default=DOMAINS, choices=DOMAINS)
     parser.add_argument("--num_samples", type=int, default=2000, help="Per domain")
     parser.add_argument("--output_dir", type=str, default="data")

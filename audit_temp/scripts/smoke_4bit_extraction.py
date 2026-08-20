@@ -53,11 +53,17 @@ def main():
     ap.add_argument("--num_codes", type=int, default=32)
     args = ap.parse_args()
 
-    print(f"[smoke] model={args.model} 4bit={args.load_in_4bit} domain={args.domain} n={args.n}")
+    print(
+        f"[smoke] model={args.model} 4bit={args.load_in_4bit} domain={args.domain} n={args.n}"
+    )
     device_map = "cpu" if not torch.cuda.is_available() else "auto"
     dtype = torch.float32 if device_map == "cpu" else torch.float16
-    model = load_model(model_id=args.model, device_map=device_map, torch_dtype=dtype,
-                       load_in_4bit=args.load_in_4bit)
+    model = load_model(
+        model_id=args.model,
+        device_map=device_map,
+        torch_dtype=dtype,
+        load_in_4bit=args.load_in_4bit,
+    )
     tokenizer = load_tokenizer(model_id=args.model)
     model.eval()
 
@@ -67,15 +73,27 @@ def main():
 
     # ---- Check 2: layer indexing -------------------------------------- #
     probs = _problems(args.domain, args.n)
-    enc = tokenizer(probs[0]["problem"] if "problem" in probs[0]
-                    else "Problem:\n" + probs[0]["cot"], return_tensors="pt").to(model.device)
+    enc = tokenizer(
+        (
+            probs[0]["problem"]
+            if "problem" in probs[0]
+            else "Problem:\n" + probs[0]["cot"]
+        ),
+        return_tensors="pt",
+    ).to(model.device)
     with torch.no_grad():
         out = model(**enc, output_hidden_states=True)
     n_hs = len(out.hidden_states)
-    assert n_hs == n_layers + 1, f"hidden_states tuple len {n_hs} != n_layers+1 ({n_layers+1})"
+    assert (
+        n_hs == n_layers + 1
+    ), f"hidden_states tuple len {n_hs} != n_layers+1 ({n_layers+1})"
     sel = out.hidden_states[args.layer]
-    assert sel.shape[-1] == cfg_dim, f"layer[{args.layer}] dim {sel.shape[-1]} != {cfg_dim}"
-    print(f"[smoke] OK  check 2: hidden_states len={n_hs} (=L+1); layer[{args.layer}] dim={sel.shape[-1]}")
+    assert (
+        sel.shape[-1] == cfg_dim
+    ), f"layer[{args.layer}] dim {sel.shape[-1]} != {cfg_dim}"
+    print(
+        f"[smoke] OK  check 2: hidden_states len={n_hs} (=L+1); layer[{args.layer}] dim={sel.shape[-1]}"
+    )
 
     # ---- Build trajectories (full per-token extraction) --------------- #
     # Countdown generator emits no 'problem' header; supply the standard one.
@@ -89,12 +107,14 @@ def main():
     assert n_built > 0, "no trajectories built"
     dropped = len(probs) - n_built
     if dropped:
-        print(f"[smoke] WARNING: {dropped} problem(s) dropped during alignment "
-              f"(silent loss — investigate before scaling)")
+        print(
+            f"[smoke] WARNING: {dropped} problem(s) dropped during alignment "
+            f"(silent loss — investigate before scaling)"
+        )
     bad_len, bad_idx = 0, 0
     for p, t in zip(probs, trajs):
         n_states = int(t.state_indices.shape[0])
-        if n_states != len(p["solution"]) + 1:   # N steps -> N+1 states
+        if n_states != len(p["solution"]) + 1:  # N steps -> N+1 states
             bad_len += 1
         if int(t.state_indices.max()) >= t.all_hidden.shape[0]:
             bad_idx += 1
@@ -108,17 +128,29 @@ def main():
     print(f"[smoke] OK  check 1: trajectory hidden_dim={tdim} == config {cfg_dim}")
 
     # ---- Check 3: VQ receives expected shapes ------------------------- #
-    vq = train_vq_quantizer(trajs, trajs,
-                            config=VQTrainConfig(num_codes=args.num_codes, epochs=5, batch_size=128))
-    assert vq.hidden_dim == cfg_dim, f"VQ hidden_dim {vq.hidden_dim} != config {cfg_dim}"
+    vq = train_vq_quantizer(
+        trajs,
+        trajs,
+        config=VQTrainConfig(num_codes=args.num_codes, epochs=5, batch_size=128),
+    )
+    assert (
+        vq.hidden_dim == cfg_dim
+    ), f"VQ hidden_dim {vq.hidden_dim} != config {cfg_dim}"
     disc = encode_trajectories_to_codes(vq, trajs)
-    mism = sum(1 for t, d in zip(trajs, disc)
-               if d.codes.shape[0] != int(t.state_indices.shape[0]))
+    mism = sum(
+        1
+        for t, d in zip(trajs, disc)
+        if d.codes.shape[0] != int(t.state_indices.shape[0])
+    )
     assert mism == 0, f"{mism} encoded trajectories have code count != state count"
     all_codes = torch.cat([d.codes for d in disc])
-    assert int(all_codes.min()) >= 0 and int(all_codes.max()) < args.num_codes, "code id out of range"
-    print(f"[smoke] OK  check 3: VQ dim={vq.hidden_dim}; codes align with states; "
-          f"ids in [0,{args.num_codes}); active={len(set(all_codes.tolist()))}")
+    assert (
+        int(all_codes.min()) >= 0 and int(all_codes.max()) < args.num_codes
+    ), "code id out of range"
+    print(
+        f"[smoke] OK  check 3: VQ dim={vq.hidden_dim}; codes align with states; "
+        f"ids in [0,{args.num_codes}); active={len(set(all_codes.tolist()))}"
+    )
 
     print("\n[smoke] ALL CHECKS PASSED")
 

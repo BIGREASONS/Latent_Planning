@@ -24,12 +24,17 @@ def _cyclic_trajs(n=20, H=12, K=6, seed=0):
         start = int(torch.randint(0, K, (1,), generator=g).item())
         seq = [(start + i) % K for i in range(N + 1)]
         states = centers[K - 1] * torch.ones(N + 1, H)  # constant, to test code-only
-        trajs.append(Trajectory(
-            all_hidden=states, input_ids=torch.zeros(N + 1, dtype=torch.long),
-            state_indices=torch.arange(N + 1),
-            op_ids=torch.zeros(N, dtype=torch.long),
-            operands=torch.zeros(N, 2), numbers=[1, 2, 3], target=100,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=states,
+                input_ids=torch.zeros(N + 1, dtype=torch.long),
+                state_indices=torch.arange(N + 1),
+                op_ids=torch.zeros(N, dtype=torch.long),
+                operands=torch.zeros(N, 2),
+                numbers=[1, 2, 3],
+                target=100,
+            )
+        )
     return trajs, centers, K
 
 
@@ -38,7 +43,8 @@ def test_rollout_produces_correct_depths():
     vq = VQStateQuantizer(hidden_dim=12, num_codes=K)
     disc = encode_trajectories_to_codes(vq, trajs)
     model, _ = train_code_transition(
-        disc, num_codes=K,
+        disc,
+        num_codes=K,
         config=CodeTransitionConfig(epochs=40, seed=0),
     )
     df = evaluate_discrete_rollout(model, vq, disc, max_depth=3)
@@ -52,7 +58,8 @@ def test_rollout_cosine_in_range():
     vq = VQStateQuantizer(hidden_dim=12, num_codes=K)
     disc = encode_trajectories_to_codes(vq, trajs)
     model, _ = train_code_transition(
-        disc, num_codes=K,
+        disc,
+        num_codes=K,
         config=CodeTransitionConfig(epochs=40, seed=0),
     )
     df = evaluate_discrete_rollout(model, vq, disc, max_depth=3)
@@ -67,7 +74,8 @@ def test_rollout_mse_non_negative():
     vq = VQStateQuantizer(hidden_dim=12, num_codes=K)
     disc = encode_trajectories_to_codes(vq, trajs)
     model, _ = train_code_transition(
-        disc, num_codes=K,
+        disc,
+        num_codes=K,
         config=CodeTransitionConfig(epochs=40, seed=0),
     )
     df = evaluate_discrete_rollout(model, vq, disc, max_depth=3)
@@ -86,19 +94,28 @@ def test_rollout_degrades_with_depth():
         start = int(torch.randint(0, K, (1,), generator=g).item())
         seq = [(start + i) % K for i in range(N + 1)]
         states = centers[K - 1] + 0.5 * torch.randn(N + 1, H, generator=g)
-        trajs.append(Trajectory(
-            all_hidden=states, input_ids=torch.zeros(N + 1, dtype=torch.long),
-            state_indices=torch.arange(N + 1),
-            op_ids=torch.zeros(N, dtype=torch.long),
-            operands=torch.zeros(N, 2), numbers=[1, 2, 3], target=100,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=states,
+                input_ids=torch.zeros(N + 1, dtype=torch.long),
+                state_indices=torch.arange(N + 1),
+                op_ids=torch.zeros(N, dtype=torch.long),
+                operands=torch.zeros(N, 2),
+                numbers=[1, 2, 3],
+                target=100,
+            )
+        )
     vq = VQStateQuantizer(hidden_dim=H, num_codes=K)
     disc = encode_trajectories_to_codes(vq, trajs)
     model, _ = train_code_transition(
-        disc, num_codes=K,
+        disc,
+        num_codes=K,
         config=CodeTransitionConfig(epochs=50, seed=0),
     )
     df = evaluate_discrete_rollout(model, vq, disc, max_depth=5)
     # First depth should not be worse than last depth on average.
     if df["n_samples"].iloc[0] > 0 and df["n_samples"].iloc[-1] > 0:
-        assert df["code_match_accuracy"].iloc[0] >= df["code_match_accuracy"].iloc[-1] - 0.2
+        assert (
+            df["code_match_accuracy"].iloc[0]
+            >= df["code_match_accuracy"].iloc[-1] - 0.2
+        )

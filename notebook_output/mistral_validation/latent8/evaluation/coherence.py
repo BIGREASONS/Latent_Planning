@@ -58,13 +58,27 @@ def evaluate_coherence(
 
     # Accumulators per depth.
     agg = {
-        d: {"mse": [], "cos": [], "op_acc": [], "teacher_op_acc": [], "state_acc": [], "teacher_state_acc": [],
-            "id_mse": [], "id_cos": [], "id_op_acc": [], "id_state_acc": [],
-            "probe_b_acc": [], "teacher_probe_b_acc": [], "id_probe_b_acc": [],
-            "probe_d_acc": [], "teacher_probe_d_acc": [], "id_probe_d_acc": []}
+        d: {
+            "mse": [],
+            "cos": [],
+            "op_acc": [],
+            "teacher_op_acc": [],
+            "state_acc": [],
+            "teacher_state_acc": [],
+            "id_mse": [],
+            "id_cos": [],
+            "id_op_acc": [],
+            "id_state_acc": [],
+            "probe_b_acc": [],
+            "teacher_probe_b_acc": [],
+            "id_probe_b_acc": [],
+            "probe_d_acc": [],
+            "teacher_probe_d_acc": [],
+            "id_probe_d_acc": [],
+        }
         for d in range(1, max_depth + 1)
     }
-    
+
     # We need the LARGE_NUMBERS array to compute Probe A targets
     LARGE_NUMBERS = [25, 50, 75, 100]
 
@@ -75,41 +89,79 @@ def evaluate_coherence(
         h_identity = h.clone().to(device)
         depth_limit = min(N, max_depth)
         for d in range(1, depth_limit + 1):
-            op = traj.op_ids[d - 1: d].to(device)
-            operands = traj.operands[d - 1: d].to(device)
+            op = traj.op_ids[d - 1 : d].to(device)
+            operands = traj.operands[d - 1 : d].to(device)
             h = transition_model(h, op, operands)  # predicted s_d
-            teacher = states[d: d + 1].to(device)
+            teacher = states[d : d + 1].to(device)
 
             agg[d]["mse"].append(F.mse_loss(h, teacher).item())
             agg[d]["cos"].append(F.cosine_similarity(h, teacher, dim=-1).item())
-            
+
             # Identity baseline metrics
             agg[d]["id_mse"].append(F.mse_loss(h_identity, teacher).item())
-            agg[d]["id_cos"].append(F.cosine_similarity(h_identity, teacher, dim=-1).item())
+            agg[d]["id_cos"].append(
+                F.cosine_similarity(h_identity, teacher, dim=-1).item()
+            )
 
             if probe_c is not None and d < N:
                 target_op = int(traj.op_ids[d].item())
-                agg[d]["op_acc"].append(1.0 if int(probe_c.predict(h.cpu().numpy())[0]) == target_op else 0.0)
-                agg[d]["teacher_op_acc"].append(1.0 if int(probe_c.predict(teacher.cpu().numpy())[0]) == target_op else 0.0)
-                agg[d]["id_op_acc"].append(1.0 if int(probe_c.predict(h_identity.cpu().numpy())[0]) == target_op else 0.0)
-                
+                agg[d]["op_acc"].append(
+                    1.0
+                    if int(probe_c.predict(h.cpu().numpy())[0]) == target_op
+                    else 0.0
+                )
+                agg[d]["teacher_op_acc"].append(
+                    1.0
+                    if int(probe_c.predict(teacher.cpu().numpy())[0]) == target_op
+                    else 0.0
+                )
+                agg[d]["id_op_acc"].append(
+                    1.0
+                    if int(probe_c.predict(h_identity.cpu().numpy())[0]) == target_op
+                    else 0.0
+                )
+
             if probe_b is not None:
                 target_dist = N - d
-                agg[d]["probe_b_acc"].append(1.0 if int(probe_b.predict(h.cpu().numpy())[0]) == target_dist else 0.0)
-                agg[d]["teacher_probe_b_acc"].append(1.0 if int(probe_b.predict(teacher.cpu().numpy())[0]) == target_dist else 0.0)
-                agg[d]["id_probe_b_acc"].append(1.0 if int(probe_b.predict(h_identity.cpu().numpy())[0]) == target_dist else 0.0)
+                agg[d]["probe_b_acc"].append(
+                    1.0
+                    if int(probe_b.predict(h.cpu().numpy())[0]) == target_dist
+                    else 0.0
+                )
+                agg[d]["teacher_probe_b_acc"].append(
+                    1.0
+                    if int(probe_b.predict(teacher.cpu().numpy())[0]) == target_dist
+                    else 0.0
+                )
+                agg[d]["id_probe_b_acc"].append(
+                    1.0
+                    if int(probe_b.predict(h_identity.cpu().numpy())[0]) == target_dist
+                    else 0.0
+                )
 
             if probe_d is not None:
                 target_reach = 1 if (N - d) <= 2 else 0
-                agg[d]["probe_d_acc"].append(1.0 if int(probe_d.predict(h.cpu().numpy())[0]) == target_reach else 0.0)
-                agg[d]["teacher_probe_d_acc"].append(1.0 if int(probe_d.predict(teacher.cpu().numpy())[0]) == target_reach else 0.0)
-                agg[d]["id_probe_d_acc"].append(1.0 if int(probe_d.predict(h_identity.cpu().numpy())[0]) == target_reach else 0.0)
+                agg[d]["probe_d_acc"].append(
+                    1.0
+                    if int(probe_d.predict(h.cpu().numpy())[0]) == target_reach
+                    else 0.0
+                )
+                agg[d]["teacher_probe_d_acc"].append(
+                    1.0
+                    if int(probe_d.predict(teacher.cpu().numpy())[0]) == target_reach
+                    else 0.0
+                )
+                agg[d]["id_probe_d_acc"].append(
+                    1.0
+                    if int(probe_d.predict(h_identity.cpu().numpy())[0]) == target_reach
+                    else 0.0
+                )
 
             if probe_a is not None:
                 used = []
                 for i in range(d):
                     used.extend(traj.operands[i].tolist())
-                
+
                 a_row = []
                 for v in LARGE_NUMBERS:
                     if v not in traj.numbers:
@@ -118,16 +170,16 @@ def evaluate_coherence(
                         a_row.append(1)
                     else:
                         a_row.append(2)
-                
+
                 def _avg_match(p, t):
                     return sum(1.0 for pv, tv in zip(p, t) if pv == tv) / len(t)
-                
+
                 pred_a = probe_a.predict(h.cpu().numpy())[0]
                 agg[d]["state_acc"].append(_avg_match(pred_a, a_row))
-                
+
                 t_pred_a = probe_a.predict(teacher.cpu().numpy())[0]
                 agg[d]["teacher_state_acc"].append(_avg_match(t_pred_a, a_row))
-                
+
                 id_pred_a = probe_a.predict(h_identity.cpu().numpy())[0]
                 agg[d]["id_state_acc"].append(_avg_match(id_pred_a, a_row))
 
@@ -136,26 +188,28 @@ def evaluate_coherence(
 
     rows = []
     for d in range(1, max_depth + 1):
-        rows.append({
-            "depth": d,
-            "mse": _mean(agg[d]["mse"]),
-            "cosine_similarity": _mean(agg[d]["cos"]),
-            "operator_accuracy": _mean(agg[d]["op_acc"]),
-            "teacher_operator_accuracy": _mean(agg[d]["teacher_op_acc"]),
-            "state_probe_accuracy": _mean(agg[d]["state_acc"]),
-            "teacher_state_probe_accuracy": _mean(agg[d]["teacher_state_acc"]),
-            "dist_probe_accuracy": _mean(agg[d]["probe_b_acc"]),
-            "teacher_dist_probe_accuracy": _mean(agg[d]["teacher_probe_b_acc"]),
-            "reach_probe_accuracy": _mean(agg[d]["probe_d_acc"]),
-            "teacher_reach_probe_accuracy": _mean(agg[d]["teacher_probe_d_acc"]),
-            "identity_mse": _mean(agg[d]["id_mse"]),
-            "identity_cosine_similarity": _mean(agg[d]["id_cos"]),
-            "identity_operator_accuracy": _mean(agg[d]["id_op_acc"]),
-            "identity_state_probe_accuracy": _mean(agg[d]["id_state_acc"]),
-            "identity_dist_probe_accuracy": _mean(agg[d]["id_probe_b_acc"]),
-            "identity_reach_probe_accuracy": _mean(agg[d]["id_probe_d_acc"]),
-            "n_samples": len(agg[d]["mse"]),
-        })
+        rows.append(
+            {
+                "depth": d,
+                "mse": _mean(agg[d]["mse"]),
+                "cosine_similarity": _mean(agg[d]["cos"]),
+                "operator_accuracy": _mean(agg[d]["op_acc"]),
+                "teacher_operator_accuracy": _mean(agg[d]["teacher_op_acc"]),
+                "state_probe_accuracy": _mean(agg[d]["state_acc"]),
+                "teacher_state_probe_accuracy": _mean(agg[d]["teacher_state_acc"]),
+                "dist_probe_accuracy": _mean(agg[d]["probe_b_acc"]),
+                "teacher_dist_probe_accuracy": _mean(agg[d]["teacher_probe_b_acc"]),
+                "reach_probe_accuracy": _mean(agg[d]["probe_d_acc"]),
+                "teacher_reach_probe_accuracy": _mean(agg[d]["teacher_probe_d_acc"]),
+                "identity_mse": _mean(agg[d]["id_mse"]),
+                "identity_cosine_similarity": _mean(agg[d]["id_cos"]),
+                "identity_operator_accuracy": _mean(agg[d]["id_op_acc"]),
+                "identity_state_probe_accuracy": _mean(agg[d]["id_state_acc"]),
+                "identity_dist_probe_accuracy": _mean(agg[d]["id_probe_b_acc"]),
+                "identity_reach_probe_accuracy": _mean(agg[d]["id_probe_d_acc"]),
+                "n_samples": len(agg[d]["mse"]),
+            }
+        )
     df = pd.DataFrame(rows)
     # Identity-Normalized Transition Score
     df["dynamics_gain"] = df["identity_mse"] / df["mse"]
@@ -172,6 +226,7 @@ def save_coherence(df, csv_path: str, png_path: Optional[str] = None) -> None:
 
 def _plot_coherence(df, png_path: str) -> None:
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -180,42 +235,118 @@ def _plot_coherence(df, png_path: str) -> None:
 
     ax1.set_xlabel("Rollout depth")
     ax1.set_ylabel("Cosine similarity / Probe accuracy")
-    l1, = ax1.plot(valid["depth"], valid["cosine_similarity"],
-                   marker="o", color="tab:blue", label="Cosine similarity")
-    l2, = ax1.plot(valid["depth"], valid["operator_accuracy"],
-                   marker="s", color="tab:green", label="Probe C (op) acc")
-    l3, = ax1.plot(valid["depth"], valid["state_probe_accuracy"],
-                   marker="v", color="tab:purple", label="Probe A (state) acc")
-    l4, = ax1.plot(valid["depth"], valid["dist_probe_accuracy"],
-                   marker="*", color="tab:orange", label="Probe B (dist) acc")
-    l5, = ax1.plot(valid["depth"], valid["reach_probe_accuracy"],
-                   marker="p", color="tab:cyan", label="Probe D (reach) acc")
-    
-    l6, = ax1.plot(valid["depth"], valid["teacher_operator_accuracy"],
-                   marker="s", linestyle="--", color="tab:green", alpha=0.5, label="Teacher Probe C")
-    l7, = ax1.plot(valid["depth"], valid["teacher_state_probe_accuracy"],
-                   marker="v", linestyle="--", color="tab:purple", alpha=0.5, label="Teacher Probe A")
-    l8, = ax1.plot(valid["depth"], valid["teacher_dist_probe_accuracy"],
-                   marker="*", linestyle="--", color="tab:orange", alpha=0.5, label="Teacher Probe B")
-    l9, = ax1.plot(valid["depth"], valid["teacher_reach_probe_accuracy"],
-                   marker="p", linestyle="--", color="tab:cyan", alpha=0.5, label="Teacher Probe D")
-                   
-    l_id_cos, = ax1.plot(valid["depth"], valid["identity_cosine_similarity"],
-                         marker="x", linestyle=":", color="tab:blue", alpha=0.5,
-                         label="Cosine similarity (Identity)")
+    (l1,) = ax1.plot(
+        valid["depth"],
+        valid["cosine_similarity"],
+        marker="o",
+        color="tab:blue",
+        label="Cosine similarity",
+    )
+    (l2,) = ax1.plot(
+        valid["depth"],
+        valid["operator_accuracy"],
+        marker="s",
+        color="tab:green",
+        label="Probe C (op) acc",
+    )
+    (l3,) = ax1.plot(
+        valid["depth"],
+        valid["state_probe_accuracy"],
+        marker="v",
+        color="tab:purple",
+        label="Probe A (state) acc",
+    )
+    (l4,) = ax1.plot(
+        valid["depth"],
+        valid["dist_probe_accuracy"],
+        marker="*",
+        color="tab:orange",
+        label="Probe B (dist) acc",
+    )
+    (l5,) = ax1.plot(
+        valid["depth"],
+        valid["reach_probe_accuracy"],
+        marker="p",
+        color="tab:cyan",
+        label="Probe D (reach) acc",
+    )
+
+    (l6,) = ax1.plot(
+        valid["depth"],
+        valid["teacher_operator_accuracy"],
+        marker="s",
+        linestyle="--",
+        color="tab:green",
+        alpha=0.5,
+        label="Teacher Probe C",
+    )
+    (l7,) = ax1.plot(
+        valid["depth"],
+        valid["teacher_state_probe_accuracy"],
+        marker="v",
+        linestyle="--",
+        color="tab:purple",
+        alpha=0.5,
+        label="Teacher Probe A",
+    )
+    (l8,) = ax1.plot(
+        valid["depth"],
+        valid["teacher_dist_probe_accuracy"],
+        marker="*",
+        linestyle="--",
+        color="tab:orange",
+        alpha=0.5,
+        label="Teacher Probe B",
+    )
+    (l9,) = ax1.plot(
+        valid["depth"],
+        valid["teacher_reach_probe_accuracy"],
+        marker="p",
+        linestyle="--",
+        color="tab:cyan",
+        alpha=0.5,
+        label="Teacher Probe D",
+    )
+
+    (l_id_cos,) = ax1.plot(
+        valid["depth"],
+        valid["identity_cosine_similarity"],
+        marker="x",
+        linestyle=":",
+        color="tab:blue",
+        alpha=0.5,
+        label="Cosine similarity (Identity)",
+    )
     ax1.set_ylim(0, 1.05)
 
     ax2 = ax1.twinx()
     ax2.set_ylabel("Hidden-state MSE", color="tab:red")
-    l_mse, = ax2.plot(valid["depth"], valid["mse"],
-                   marker="d", color="tab:red", label="Hidden-state MSE")
-    l_id_mse, = ax2.plot(valid["depth"], valid["identity_mse"],
-                         marker="*", linestyle=":", color="tab:red", alpha=0.5,
-                         label="Hidden-state MSE (Identity)")
+    (l_mse,) = ax2.plot(
+        valid["depth"],
+        valid["mse"],
+        marker="d",
+        color="tab:red",
+        label="Hidden-state MSE",
+    )
+    (l_id_mse,) = ax2.plot(
+        valid["depth"],
+        valid["identity_mse"],
+        marker="*",
+        linestyle=":",
+        color="tab:red",
+        alpha=0.5,
+        label="Hidden-state MSE (Identity)",
+    )
     ax2.tick_params(axis="y", labelcolor="tab:red")
 
     lines = [l1, l2, l3, l4, l5, l_id_cos, l6, l7, l8, l9, l_mse, l_id_mse]
-    ax1.legend(lines, [ln.get_label() for ln in lines], loc="center left", bbox_to_anchor=(1.15, 0.5), fontsize="small")
+    ax1.legend(
+        lines,
+        [ln.get_label() for ln in lines],
+        loc="center left",
+        bbox_to_anchor=(1.15, 0.5),
+        fontsize="small",
+    )
     ax1.set_title("Latent coherence vs rollout depth")
     ax1.grid(True, linestyle="--", alpha=0.5)
 

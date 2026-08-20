@@ -101,7 +101,7 @@ def _median(sorted_vals):
 def compute_statistics(occ_by_state):
     """Return (per_state_rows, summary) computed from grouped occurrences."""
     per_state_rows = []
-    occ_counts = []         # occurrences per symbolic state
+    occ_counts = []  # occurrences per symbolic state
     unique_hist_counts = []  # unique histories per symbolic state
 
     # Accumulators for anchor-level (occurrence-level) coverage.
@@ -166,8 +166,8 @@ def compute_statistics(occ_by_state):
         unique_hist_counts.append(n_unique_hist)
 
     occ_counts_sorted = sorted(occ_counts)
-    total_states = sum(occ_counts)            # total aligned state instances
-    unique_states = len(occ_by_state)         # distinct symbolic states
+    total_states = sum(occ_counts)  # total aligned state instances
+    unique_states = len(occ_by_state)  # distinct symbolic states
 
     def _frac(cond_count):
         return (cond_count / unique_states) if unique_states else 0.0
@@ -191,7 +191,9 @@ def compute_statistics(occ_by_state):
     summary = {
         "total_states": total_states,
         "unique_symbolic_states": unique_states,
-        "avg_occurrences_per_state": (total_states / unique_states) if unique_states else 0.0,
+        "avg_occurrences_per_state": (
+            (total_states / unique_states) if unique_states else 0.0
+        ),
         "median_occurrences": _median(occ_counts_sorted),
         "max_occurrences": max(occ_counts) if occ_counts else 0,
         "states_ge2_occ": ge2,
@@ -239,7 +241,9 @@ CSV_FIELDS = [
 
 def write_csv(per_state_rows, path):
     # Most-collided states first for easy inspection.
-    rows = sorted(per_state_rows, key=lambda r: (-r["occurrences"], -r["unique_histories"]))
+    rows = sorted(
+        per_state_rows, key=lambda r: (-r["occurrences"], -r["unique_histories"])
+    )
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
@@ -288,10 +292,18 @@ def write_summary_md(summary, split_counts, path):
     lines.append("## Collision distribution\n")
     lines.append("| threshold | states | fraction of unique states |")
     lines.append("|---|---|---|")
-    lines.append(f"| >= 2 occurrences | {s['states_ge2_occ']} | {_fmt(s['frac_ge2_occ'])} |")
-    lines.append(f"| >= 5 occurrences | {s['states_ge5_occ']} | {_fmt(s['frac_ge5_occ'])} |")
-    lines.append(f"| >= 10 occurrences | {s['states_ge10_occ']} | {_fmt(s['frac_ge10_occ'])} |")
-    lines.append(f"| >= 20 occurrences | {s['states_ge20_occ']} | {_fmt(s['frac_ge20_occ'])} |")
+    lines.append(
+        f"| >= 2 occurrences | {s['states_ge2_occ']} | {_fmt(s['frac_ge2_occ'])} |"
+    )
+    lines.append(
+        f"| >= 5 occurrences | {s['states_ge5_occ']} | {_fmt(s['frac_ge5_occ'])} |"
+    )
+    lines.append(
+        f"| >= 10 occurrences | {s['states_ge10_occ']} | {_fmt(s['frac_ge10_occ'])} |"
+    )
+    lines.append(
+        f"| >= 20 occurrences | {s['states_ge20_occ']} | {_fmt(s['frac_ge20_occ'])} |"
+    )
     lines.append("")
 
     lines.append("## History diversity\n")
@@ -310,7 +322,9 @@ def write_summary_md(summary, split_counts, path):
         "(this is the exact Oracle 2A partner rule). Candidate counts are ordered "
         "anchor->partner pairs.\n"
     )
-    lines.append("| metric | A (diff trajectory) | B (diff trajectory + diff history) |")
+    lines.append(
+        "| metric | A (diff trajectory) | B (diff trajectory + diff history) |"
+    )
     lines.append("|---|---|---|")
     lines.append(
         f"| symbolic states with >=1 candidate | {s['states_with_swap_candidates_A']} "
@@ -340,15 +354,27 @@ def write_summary_md(summary, split_counts, path):
 # --------------------------------------------------------------------------- #
 def main():
     ap = argparse.ArgumentParser(description="Collision Statistics Audit")
-    ap.add_argument("--reports_dir", default="reports",
-                    help="Holds trajectories/ and receives outputs.")
-    ap.add_argument("--out_dir", default=None,
-                    help="Output directory (default <reports_dir>).")
-    ap.add_argument("--splits", nargs="+", default=["train", "test"],
-                    help="Trajectory splits to include (default train test).")
-    ap.add_argument("--sample", type=int, default=0,
-                    help="Lightweight validation: cap trajectories loaded PER SPLIT "
-                         "to this many (0 = use all). Outputs are suffixed _sample.")
+    ap.add_argument(
+        "--reports_dir",
+        default="reports",
+        help="Holds trajectories/ and receives outputs.",
+    )
+    ap.add_argument(
+        "--out_dir", default=None, help="Output directory (default <reports_dir>)."
+    )
+    ap.add_argument(
+        "--splits",
+        nargs="+",
+        default=["train", "test"],
+        help="Trajectory splits to include (default train test).",
+    )
+    ap.add_argument(
+        "--sample",
+        type=int,
+        default=0,
+        help="Lightweight validation: cap trajectories loaded PER SPLIT "
+        "to this many (0 = use all). Outputs are suffixed _sample.",
+    )
     args = ap.parse_args()
 
     out_dir = args.out_dir or args.reports_dir

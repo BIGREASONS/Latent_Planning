@@ -40,9 +40,7 @@ ID_TO_OP = {i: op for op, i in OP_TO_ID.items()}
 _SYMBOL_TO_OP = {op.value: op for op in Op}
 
 # "<int> <op> <int> = <int>" with arbitrary surrounding/inner whitespace.
-_STEP_RE = re.compile(
-    r"^\s*(-?\d+)\s*([+\-*/])\s*(-?\d+)\s*=\s*(-?\d+)\s*$"
-)
+_STEP_RE = re.compile(r"^\s*(-?\d+)\s*([+\-*/])\s*(-?\d+)\s*=\s*(-?\d+)\s*$")
 
 
 @dataclass(frozen=True)

@@ -13,10 +13,12 @@ from data_processing.trajectory_dataset import (
 TEST_MODEL = "hf-internal-testing/tiny-random-LlamaForCausalLM"
 
 PROBLEMS = [
-    {"numbers": [25, 100, 50, 2, 5, 4], "target": 18,
-     "solution": ["25 - 5 = 20", "20 - 2 = 18"]},
-    {"numbers": [2, 4, 8, 1, 3, 6], "target": 8,
-     "solution": ["2 * 4 = 8"]},
+    {
+        "numbers": [25, 100, 50, 2, 5, 4],
+        "target": 18,
+        "solution": ["25 - 5 = 20", "20 - 2 = 18"],
+    },
+    {"numbers": [2, 4, 8, 1, 3, 6], "target": 8, "solution": ["2 * 4 = 8"]},
 ]
 
 

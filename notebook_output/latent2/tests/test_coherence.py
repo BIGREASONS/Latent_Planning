@@ -30,15 +30,17 @@ def _toy_trajectories(n=5, H=8, steps=4, seed=1):
         for i in range(steps):
             s = s + shifts[op_ids[i]]
             all_hidden[i + 1] = s
-        trajs.append(Trajectory(
-            all_hidden=all_hidden,
-            input_ids=torch.arange(T),
-            state_indices=torch.arange(steps + 1),
-            op_ids=op_ids,
-            operands=torch.zeros(steps, 2),
-            numbers=[1, 2, 3, 4, 5, 6],
-            target=10,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=all_hidden,
+                input_ids=torch.arange(T),
+                state_indices=torch.arange(steps + 1),
+                op_ids=op_ids,
+                operands=torch.zeros(steps, 2),
+                numbers=[1, 2, 3, 4, 5, 6],
+                target=10,
+            )
+        )
     return trajs, shifts
 
 

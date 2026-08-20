@@ -47,10 +47,10 @@ NUM_OPS = 4  # ADD/SUB/MUL/DIV id space (DIV unused in the data)
 # --------------------------------------------------------------------------- #
 @dataclass
 class ActionTransitions:
-    z_t: np.ndarray        # (M,) current code
-    z_next: np.ndarray     # (M,) next code
-    op: np.ndarray         # (M,) op id of the action
-    operands: np.ndarray   # (M, 2) raw [arg1, arg2]
+    z_t: np.ndarray  # (M,) current code
+    z_next: np.ndarray  # (M,) next code
+    op: np.ndarray  # (M,) op id of the action
+    operands: np.ndarray  # (M, 2) raw [arg1, arg2]
 
 
 def extract_action_transitions(disc: List[DiscreteTrajectory]) -> ActionTransitions:
@@ -61,7 +61,9 @@ def extract_action_transitions(disc: List[DiscreteTrajectory]) -> ActionTransiti
             zt.append(int(codes[i].item()))
             zn.append(int(codes[i + 1].item()))
             ops.append(int(tr.op_ids[i].item()))
-            opnd.append([float(tr.operands[i][0].item()), float(tr.operands[i][1].item())])
+            opnd.append(
+                [float(tr.operands[i][0].item()), float(tr.operands[i][1].item())]
+            )
     return ActionTransitions(
         z_t=np.asarray(zt, dtype=np.int64),
         z_next=np.asarray(zn, dtype=np.int64),
@@ -149,8 +151,17 @@ def conditional_structure(keys, nexts, min_count: int = 10) -> Dict:
 class ActionTransitionMLP(nn.Module):
     """Next-code MLP optionally conditioned on op id, operands, and/or z_t."""
 
-    def __init__(self, num_codes, num_ops=NUM_OPS, embed_dim=32, op_dim=8,
-                 hidden_dim=128, use_state=True, use_op=False, use_operands=False):
+    def __init__(
+        self,
+        num_codes,
+        num_ops=NUM_OPS,
+        embed_dim=32,
+        op_dim=8,
+        hidden_dim=128,
+        use_state=True,
+        use_op=False,
+        use_operands=False,
+    ):
         super().__init__()
         self.use_state, self.use_op, self.use_operands = use_state, use_op, use_operands
         in_dim = 0
@@ -192,7 +203,9 @@ class ActionMLPConfig:
     history: List[dict] = field(default_factory=list)
 
 
-def _operand_features(operands: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarray:
+def _operand_features(
+    operands: np.ndarray, mean: np.ndarray, std: np.ndarray
+) -> np.ndarray:
     """Signed-log transform then standardize (operands span 1..thousands)."""
     sl = np.sign(operands) * np.log1p(np.abs(operands))
     return (sl - mean) / std
@@ -209,13 +222,17 @@ def _fit_operand_norm(operands: np.ndarray):
 def _tensors(tr: ActionTransitions, op_mean, op_std):
     z = torch.tensor(tr.z_t, dtype=torch.long)
     op = torch.tensor(tr.op, dtype=torch.long)
-    opnd = torch.tensor(_operand_features(tr.operands, op_mean, op_std), dtype=torch.float32)
+    opnd = torch.tensor(
+        _operand_features(tr.operands, op_mean, op_std), dtype=torch.float32
+    )
     y = torch.tensor(tr.z_next, dtype=torch.long)
     return TensorDataset(z, op, opnd, y)
 
 
 def train_action_mlp(
-    train: ActionTransitions, ev: ActionTransitions, num_codes: int,
+    train: ActionTransitions,
+    ev: ActionTransitions,
+    num_codes: int,
     config: ActionMLPConfig,
 ) -> Dict[str, float]:
     """Train one MLP variant; return held-out top1 + predictive entropy."""
@@ -223,14 +240,21 @@ def train_action_mlp(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     op_mean, op_std = _fit_operand_norm(train.operands)
 
-    train_loader = DataLoader(_tensors(train, op_mean, op_std),
-                              batch_size=config.batch_size, shuffle=True)
-    eval_loader = DataLoader(_tensors(ev, op_mean, op_std), batch_size=config.batch_size)
+    train_loader = DataLoader(
+        _tensors(train, op_mean, op_std), batch_size=config.batch_size, shuffle=True
+    )
+    eval_loader = DataLoader(
+        _tensors(ev, op_mean, op_std), batch_size=config.batch_size
+    )
 
     model = ActionTransitionMLP(
-        num_codes, use_state=config.use_state, use_op=config.use_op,
-        use_operands=config.use_operands, embed_dim=config.embed_dim,
-        op_dim=config.op_dim, hidden_dim=config.hidden_dim,
+        num_codes,
+        use_state=config.use_state,
+        use_op=config.use_op,
+        use_operands=config.use_operands,
+        embed_dim=config.embed_dim,
+        op_dim=config.op_dim,
+        hidden_dim=config.hidden_dim,
     ).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=config.lr)
 
@@ -250,15 +274,20 @@ def train_action_mlp(
             z, op, opnd, y = z.to(device), op.to(device), opnd.to(device), y.to(device)
             logits = model(z, op, opnd)
             probs = F.softmax(logits, dim=-1)
-            ent_sum += (-(probs * torch.log(probs.clamp_min(1e-10))).sum(-1)).sum().item()
+            ent_sum += (
+                (-(probs * torch.log(probs.clamp_min(1e-10))).sum(-1)).sum().item()
+            )
             correct += (logits.argmax(-1) == y).sum().item()
             n += z.shape[0]
     return {"top1": correct / max(n, 1), "pred_entropy": ent_sum / max(n, 1)}
 
 
 def run_all_models(
-    train: ActionTransitions, ev: ActionTransitions, num_codes: int,
-    epochs: int = 30, seed: int = 0,
+    train: ActionTransitions,
+    ev: ActionTransitions,
+    num_codes: int,
+    epochs: int = 30,
+    seed: int = 0,
 ) -> Dict[str, Dict]:
     """Run A-F and the two structural conditionings. Returns a results dict."""
     res: Dict[str, Dict] = {}
@@ -267,25 +296,35 @@ def run_all_models(
     res["C_action_bigram"] = {"top1": action_bigram_top1(train, ev), "cond": "z_t, op"}
 
     variants = {
-        "D_mlp_z": ActionMLPConfig(use_state=True, use_op=False, use_operands=False,
-                                   epochs=epochs, seed=seed),
-        "E_mlp_z_op": ActionMLPConfig(use_state=True, use_op=True, use_operands=False,
-                                      epochs=epochs, seed=seed),
-        "E2_mlp_z_op_operands": ActionMLPConfig(use_state=True, use_op=True,
-                                                use_operands=True, epochs=epochs, seed=seed),
-        "F_mlp_action_only": ActionMLPConfig(use_state=False, use_op=True,
-                                             use_operands=True, epochs=epochs, seed=seed),
+        "D_mlp_z": ActionMLPConfig(
+            use_state=True, use_op=False, use_operands=False, epochs=epochs, seed=seed
+        ),
+        "E_mlp_z_op": ActionMLPConfig(
+            use_state=True, use_op=True, use_operands=False, epochs=epochs, seed=seed
+        ),
+        "E2_mlp_z_op_operands": ActionMLPConfig(
+            use_state=True, use_op=True, use_operands=True, epochs=epochs, seed=seed
+        ),
+        "F_mlp_action_only": ActionMLPConfig(
+            use_state=False, use_op=True, use_operands=True, epochs=epochs, seed=seed
+        ),
     }
-    conds = {"D_mlp_z": "z_t", "E_mlp_z_op": "z_t, op",
-             "E2_mlp_z_op_operands": "z_t, op, operands",
-             "F_mlp_action_only": "op, operands"}
+    conds = {
+        "D_mlp_z": "z_t",
+        "E_mlp_z_op": "z_t, op",
+        "E2_mlp_z_op_operands": "z_t, op, operands",
+        "F_mlp_action_only": "op, operands",
+    }
     for name, cfg in variants.items():
         m = train_action_mlp(train, ev, num_codes, cfg)
         m["cond"] = conds[name]
         res[name] = m
 
     # Structural transition entropy / determinism (measured on train).
-    res["_struct_state"] = conditional_structure(train.z_t.tolist(), train.z_next.tolist())
+    res["_struct_state"] = conditional_structure(
+        train.z_t.tolist(), train.z_next.tolist()
+    )
     res["_struct_action"] = conditional_structure(
-        list(zip(train.z_t.tolist(), train.op.tolist())), train.z_next.tolist())
+        list(zip(train.z_t.tolist(), train.op.tolist())), train.z_next.tolist()
+    )
     return res

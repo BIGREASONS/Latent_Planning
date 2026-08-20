@@ -83,15 +83,15 @@ def _make_probe():
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
 
-    return Pipeline([
-        ("scaler", StandardScaler()),
-        ("clf", LogisticRegression(max_iter=2000)),
-    ])
+    return Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("clf", LogisticRegression(max_iter=2000)),
+        ]
+    )
 
 
-def _fit_eval_single(
-    Xtr, ytr, Xte, yte, binary: bool
-) -> Dict[str, float]:
+def _fit_eval_single(Xtr, ytr, Xte, yte, binary: bool) -> Dict[str, float]:
     """Fit one logistic-regression probe and return accuracy/f1/auc."""
     from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
@@ -101,16 +101,16 @@ def _fit_eval_single(
         const = int(classes[0]) if classes.shape[0] else 0
         pred = np.full_like(yte, const)
         acc = accuracy_score(yte, pred)
-        f1 = f1_score(yte, pred, average="binary" if binary else "macro",
-                      zero_division=0)
+        f1 = f1_score(
+            yte, pred, average="binary" if binary else "macro", zero_division=0
+        )
         return {"accuracy": float(acc), "f1": float(f1), "auc": float("nan")}
 
     clf = _make_probe()
     clf.fit(Xtr, ytr)
     pred = clf.predict(Xte)
     acc = accuracy_score(yte, pred)
-    f1 = f1_score(yte, pred, average="binary" if binary else "macro",
-                  zero_division=0)
+    f1 = f1_score(yte, pred, average="binary" if binary else "macro", zero_division=0)
 
     auc = float("nan")
     try:
@@ -118,8 +118,13 @@ def _fit_eval_single(
         if binary:
             auc = roc_auc_score(yte, proba[:, 1])
         else:
-            auc = roc_auc_score(yte, proba, multi_class="ovr",
-                                average="macro", labels=clf.named_steps["clf"].classes_)
+            auc = roc_auc_score(
+                yte,
+                proba,
+                multi_class="ovr",
+                average="macro",
+                labels=clf.named_steps["clf"].classes_,
+            )
     except ValueError:
         auc = float("nan")  # e.g. a class missing from the test set
     return {"accuracy": float(acc), "f1": float(f1), "auc": float(auc), "clf": clf}
@@ -139,6 +144,7 @@ def _fit_eval_multilabel(Xtr, Ytr, Xte, Yte) -> Dict[str, float]:
         "f1": float(np.mean(f1s)),
         "auc": float(np.mean(aucs)) if aucs else float("nan"),
     }
+
 
 class MultiLabelProbe:
     def __init__(self):
@@ -166,25 +172,27 @@ class MultiLabelProbe:
                 preds.append(clf.predict(X))
         return np.column_stack(preds)
 
+
 def _fit_eval_multilabel_joint(Xtr, Ytr, Xte, Yte):
     from sklearn.metrics import accuracy_score
+
     clf = MultiLabelProbe()
     clf.fit(Xtr, Ytr)
     pred = clf.predict(Xte)
-    
+
     # average per-label accuracy
     accs = []
     for j in range(Ytr.shape[1]):
         accs.append(accuracy_score(Yte[:, j], pred[:, j]))
     # exact match accuracy
     exact_acc = float(np.mean(np.all(Yte == pred, axis=1)))
-    
+
     return {
         "accuracy": float(np.mean(accs)),
         "exact_accuracy": exact_acc,
-        "f1": 0.0, # not critical
+        "f1": 0.0,  # not critical
         "auc": float("nan"),
-        "clf": clf
+        "clf": clf,
     }
 
 
@@ -241,8 +249,9 @@ def run_probes(
     details["n_train"] = int(tr["X"].shape[0])
     details["n_test"] = int(te["X"].shape[0])
     details["chance"] = {
-        "A": float(np.mean([_chance_accuracy(te["A"][:, j])
-                            for j in range(te["A"].shape[1])])),
+        "A": float(
+            np.mean([_chance_accuracy(te["A"][:, j]) for j in range(te["A"].shape[1])])
+        ),
         "B": _chance_accuracy(te["B"]),
         "C": _chance_accuracy(te["C"]),
         "D": _chance_accuracy(te["D"]),
@@ -271,11 +280,13 @@ def generate_probe_report(df, details: Dict, md_path: str) -> None:
     lines.append("# Representation Probe Report\n")
     lines.append(
         f"Linear probes fit on **{details['n_train']}** teacher states, "
-        f"evaluated on **{details['n_test']}** held-out states.\n")
+        f"evaluated on **{details['n_test']}** held-out states.\n"
+    )
     lines.append(
         "Each probe is a logistic regression on standardized hidden states "
         "(linear only). A score well above the majority-class baseline means "
-        "the information is *linearly decodable* from the frozen representation.\n")
+        "the information is *linearly decodable* from the frozen representation.\n"
+    )
 
     lines.append("\n## Results\n")
     lines.append("| Probe | Accuracy | Exact Match | Chance | F1 | AUC | Verdict |")
@@ -285,19 +296,23 @@ def generate_probe_report(df, details: Dict, md_path: str) -> None:
         base = chance_by_key.get(r["probe"], float("nan"))
         auc = r["auc"]
         # "Encoded" if clearly above chance and AUC indicates real signal.
-        is_encoded = (
-            (not np.isnan(auc) and auc >= 0.65)
-            or (r["accuracy"] - base >= 0.10)
+        is_encoded = (not np.isnan(auc) and auc >= 0.65) or (
+            r["accuracy"] - base >= 0.10
         )
         verdict = "encoded" if is_encoded else "weak / not encoded"
         (encoded if is_encoded else not_encoded).append(r["probe"])
         auc_str = "n/a" if np.isnan(auc) else f"{auc:.3f}"
-        
-        exact_str = f"{r['exact_accuracy']:.3f}" if "exact_accuracy" in r and not pd.isna(r["exact_accuracy"]) else "n/a"
-        
+
+        exact_str = (
+            f"{r['exact_accuracy']:.3f}"
+            if "exact_accuracy" in r and not pd.isna(r["exact_accuracy"])
+            else "n/a"
+        )
+
         lines.append(
             f"| {r['probe']} | {r['accuracy']:.3f} | {exact_str} | {base:.3f} | "
-            f"{r['f1']:.3f} | {auc_str} | {verdict} |")
+            f"{r['f1']:.3f} | {auc_str} | {verdict} |"
+        )
 
     lines.append("\n## Interpretation\n")
     if encoded:
@@ -305,8 +320,9 @@ def generate_probe_report(df, details: Dict, md_path: str) -> None:
         for p in encoded:
             lines.append(f"- {p}")
     else:
-        lines.append("**Linearly encoded:** none of the probed quantities "
-                     "cleared the bar.")
+        lines.append(
+            "**Linearly encoded:** none of the probed quantities " "cleared the bar."
+        )
     lines.append("")
     if not_encoded:
         lines.append("**Weak or not linearly encoded:**")
@@ -318,7 +334,8 @@ def generate_probe_report(df, details: Dict, md_path: str) -> None:
         "{25,50,75,100} so each label has a consistent meaning across problems. "
         "AUC is reported as macro one-vs-rest for multiclass probes and averaged "
         "over labels for the multi-label probe; 'n/a' indicates a degenerate or "
-        "missing class in the evaluation split._\n")
+        "missing class in the evaluation split._\n"
+    )
 
     os.makedirs(os.path.dirname(os.path.abspath(md_path)), exist_ok=True)
     with open(md_path, "w", encoding="utf-8") as f:

@@ -83,9 +83,7 @@ def build_multi_solution_trajectories(
         input_ids = enc["input_ids"][0].detach().cpu()
         end_chars = _state_end_chars(header, steps)
         try:
-            state_indices = [
-                _token_index_for_char_end(offsets, ec) for ec in end_chars
-            ]
+            state_indices = [_token_index_for_char_end(offsets, ec) for ec in end_chars]
         except ValueError:
             continue
         state_indices = torch.tensor(state_indices, dtype=torch.long)
@@ -135,9 +133,7 @@ def evaluate_permutation_robustness(
     for p_idx, sol_disc_trajs in enumerate(discrete_groups):
         for s_idx, disc in enumerate(sol_disc_trajs):
             n_solutions_total += 1
-            sym_states = get_symbolic_states(
-                _disc_to_trajectory(disc)
-            )
+            sym_states = get_symbolic_states(_disc_to_trajectory(disc))
             for d, info in enumerate(sym_states):
                 if info is None or d >= disc.codes.shape[0]:
                     continue
@@ -171,7 +167,9 @@ def evaluate_permutation_robustness(
     # Aggregate all codes seen across the matched groups for the empirical null.
     all_codes_seen = [c for items in by_symbol.values() for (_, c) in items]
     if all_codes_seen:
-        counts = np.bincount(np.asarray(all_codes_seen), minlength=num_codes).astype(np.float64)
+        counts = np.bincount(np.asarray(all_codes_seen), minlength=num_codes).astype(
+            np.float64
+        )
         p = counts / counts.sum()
         empirical_baseline = float((p * p).sum())
     else:
@@ -180,14 +178,20 @@ def evaluate_permutation_robustness(
 
     n_problems = len(discrete_groups)
     return {
-        "cross_consistency": (cross_match / cross_total) if cross_total else float("nan"),
-        "within_consistency": (within_match / within_total) if within_total else float("nan"),
+        "cross_consistency": (
+            (cross_match / cross_total) if cross_total else float("nan")
+        ),
+        "within_consistency": (
+            (within_match / within_total) if within_total else float("nan")
+        ),
         "uniform_random_baseline": uniform_baseline,
         "empirical_random_baseline": empirical_baseline,
         "n_pairs_cross": cross_total,
         "n_problems_with_match": len(problems_with_match),
         "n_problems_total": n_problems,
-        "mean_solutions_per_problem": (n_solutions_total / n_problems) if n_problems else 0.0,
+        "mean_solutions_per_problem": (
+            (n_solutions_total / n_problems) if n_problems else 0.0
+        ),
     }
 
 

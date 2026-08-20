@@ -33,8 +33,6 @@ from models.vq_state import VQStateQuantizer
 from evaluation.discrete_transition import CodeTransitionModel
 
 
-
-
 @torch.no_grad()
 def evaluate_discrete_rollout(
     transition_model: CodeTransitionModel,
@@ -71,11 +69,18 @@ def evaluate_discrete_rollout(
     codebook = vq.codebook.to(device)
 
     agg = {
-        d: {"code_match": [], "cos": [], "mse": [],
-            "op_acc": [], "teacher_op_acc": [],
-            "probe_b_acc": [], "teacher_probe_b_acc": [],
-            "state_acc": [], "teacher_state_acc": [],
-            "n": 0}
+        d: {
+            "code_match": [],
+            "cos": [],
+            "mse": [],
+            "op_acc": [],
+            "teacher_op_acc": [],
+            "probe_b_acc": [],
+            "teacher_probe_b_acc": [],
+            "state_acc": [],
+            "teacher_state_acc": [],
+            "n": 0,
+        }
         for d in range(1, max_depth + 1)
     }
 
@@ -83,21 +88,17 @@ def evaluate_discrete_rollout(
         N = traj.num_steps
         if N == 0:
             continue
-        z = traj.codes[0:1].to(device)        # (1,) teacher start code
+        z = traj.codes[0:1].to(device)  # (1,) teacher start code
         depth_limit = min(N, max_depth)
         for d in range(1, depth_limit + 1):
-            logits = transition_model(z)       # (1, K)
-            z_pred = logits.argmax(dim=-1)     # (1,)
-            teacher_code = traj.codes[d:d + 1].to(device)
+            logits = transition_model(z)  # (1, K)
+            z_pred = logits.argmax(dim=-1)  # (1,)
+            teacher_code = traj.codes[d : d + 1].to(device)
 
-            agg[d]["code_match"].append(
-                float((z_pred == teacher_code).item())
-            )
-            h_pred = codebook[z_pred]          # (1, H)
+            agg[d]["code_match"].append(float((z_pred == teacher_code).item()))
+            h_pred = codebook[z_pred]  # (1, H)
             h_teacher = codebook[teacher_code]
-            agg[d]["cos"].append(
-                F.cosine_similarity(h_pred, h_teacher, dim=-1).item()
-            )
+            agg[d]["cos"].append(F.cosine_similarity(h_pred, h_teacher, dim=-1).item())
             agg[d]["mse"].append(F.mse_loss(h_pred, h_teacher).item())
 
             # Advance the rollout by the predicted code (autoregressive).
@@ -133,9 +134,7 @@ def evaluate_discrete_rollout(
 
                 hp = h_pred.cpu().numpy()
                 ht = h_teacher.cpu().numpy()
-                agg[d]["state_acc"].append(
-                    _avg_match(probe_a.predict(hp)[0], a_row)
-                )
+                agg[d]["state_acc"].append(_avg_match(probe_a.predict(hp)[0], a_row))
                 agg[d]["teacher_state_acc"].append(
                     _avg_match(probe_a.predict(ht)[0], a_row)
                 )
@@ -147,19 +146,21 @@ def evaluate_discrete_rollout(
 
     rows = []
     for d in range(1, max_depth + 1):
-        rows.append({
-            "depth": d,
-            "code_match_accuracy": _mean(agg[d]["code_match"]),
-            "cosine_similarity": _mean(agg[d]["cos"]),
-            "mse": _mean(agg[d]["mse"]),
-            "operator_accuracy": _mean(agg[d]["op_acc"]),
-            "teacher_operator_accuracy": _mean(agg[d]["teacher_op_acc"]),
-            "dist_probe_accuracy": _mean(agg[d]["probe_b_acc"]),
-            "teacher_dist_probe_accuracy": _mean(agg[d]["teacher_probe_b_acc"]),
-            "state_probe_accuracy": _mean(agg[d]["state_acc"]),
-            "teacher_state_probe_accuracy": _mean(agg[d]["teacher_state_acc"]),
-            "n_samples": agg[d]["n"],
-        })
+        rows.append(
+            {
+                "depth": d,
+                "code_match_accuracy": _mean(agg[d]["code_match"]),
+                "cosine_similarity": _mean(agg[d]["cos"]),
+                "mse": _mean(agg[d]["mse"]),
+                "operator_accuracy": _mean(agg[d]["op_acc"]),
+                "teacher_operator_accuracy": _mean(agg[d]["teacher_op_acc"]),
+                "dist_probe_accuracy": _mean(agg[d]["probe_b_acc"]),
+                "teacher_dist_probe_accuracy": _mean(agg[d]["teacher_probe_b_acc"]),
+                "state_probe_accuracy": _mean(agg[d]["state_acc"]),
+                "teacher_state_probe_accuracy": _mean(agg[d]["teacher_state_acc"]),
+                "n_samples": agg[d]["n"],
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -198,8 +199,14 @@ def _plot_rollout(df, png_path: str) -> None:
         ("teacher_state_probe_accuracy", "Teacher A", "tab:purple"),
     ]:
         if col in valid.columns:
-            ax.plot(valid["depth"], valid[col], linestyle="--", color=color,
-                    alpha=0.5, label=label)
+            ax.plot(
+                valid["depth"],
+                valid[col],
+                linestyle="--",
+                color=color,
+                alpha=0.5,
+                label=label,
+            )
 
     ax.set_ylim(0, 1.05)
     ax.set_title("Discrete rollout coherence vs depth")

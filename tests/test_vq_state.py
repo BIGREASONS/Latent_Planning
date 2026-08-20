@@ -42,10 +42,12 @@ def test_ema_recovers_cluster_centers():
     # Use a relatively fast EMA decay so codebook adapts within the loop.
     vq = VQStateQuantizer(hidden_dim=8, num_codes=4, ema_decay=0.9, epsilon=1e-5)
     centers = torch.tensor(
-        [[1, 0, 0, 0, 0, 0, 0, 0],
-         [-1, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0],
-         [0, -1, 0, 0, 0, 0, 0, 0]],
+        [
+            [1, 0, 0, 0, 0, 0, 0, 0],
+            [-1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0],
+            [0, -1, 0, 0, 0, 0, 0, 0],
+        ],
         dtype=torch.float32,
     )
     h = centers.repeat(50, 1) + 0.01 * torch.randn(200, 8)
@@ -55,9 +57,9 @@ def test_ema_recovers_cluster_centers():
         vq(h, training=True)
     # All 4 codes should be active (perplexity ~ 4).
     _, _, info = vq(h, training=False)
-    assert int(info["active_codes"]) == 4, (
-        f"Expected 4 active codes, got {int(info['active_codes'])}"
-    )
+    assert (
+        int(info["active_codes"]) == 4
+    ), f"Expected 4 active codes, got {int(info['active_codes'])}"
     assert float(info["perplexity"]) > 3.0
     # Commitment loss -> ~0 once the codebook matches the centers.
     assert float(info["commitment_loss"]) < 0.1

@@ -81,12 +81,12 @@ class VQStateQuantizer(nn.Module):
         # Squared L2 distance ||h - c||^2 = ||h||^2 + ||c||^2 - 2 h·c
         # computed without materializing the (M, num_codes, H) tensor.
         dist = (
-            h_flat.pow(2).sum(dim=-1, keepdim=True)               # (M, 1)
-            + self.codebook.pow(2).sum(dim=-1, keepdim=False)     # (num_codes,)
-            - 2.0 * h_flat @ self.codebook.t()                    # (M, num_codes)
+            h_flat.pow(2).sum(dim=-1, keepdim=True)  # (M, 1)
+            + self.codebook.pow(2).sum(dim=-1, keepdim=False)  # (num_codes,)
+            - 2.0 * h_flat @ self.codebook.t()  # (M, num_codes)
         )
-        indices = dist.argmin(dim=-1)                              # (M,)
-        z_q_flat = self.codebook[indices]                          # (M, H)
+        indices = dist.argmin(dim=-1)  # (M,)
+        z_q_flat = self.codebook[indices]  # (M, H)
         z_q = z_q_flat.reshape(*lead_shape, self.hidden_dim)
         return z_q, indices, z_q_flat
 
@@ -99,9 +99,9 @@ class VQStateQuantizer(nn.Module):
         """
         with torch.no_grad():
             one_hot = F.one_hot(indices_flat, self.num_codes).type_as(h_flat)  # (M, K)
-            cluster_size = one_hot.sum(dim=0)                                   # (K,)
+            cluster_size = one_hot.sum(dim=0)  # (K,)
             # Sum of encoder outputs assigned to each code.
-            dw = one_hot.t() @ h_flat                                          # (K, H)
+            dw = one_hot.t() @ h_flat  # (K, H)
 
             # Laplace smoothing on the EMA cluster size.
             self.ema_cluster_size.mul_(self.ema_decay).add_(
@@ -129,7 +129,9 @@ class VQStateQuantizer(nn.Module):
             dead = self.ema_cluster_size < self.epsilon
             if dead.any() and h_flat.shape[0] > 0:
                 n_dead = int(dead.sum().item())
-                repl = h_flat[torch.randint(0, h_flat.shape[0], (n_dead,), device=h_flat.device)]
+                repl = h_flat[
+                    torch.randint(0, h_flat.shape[0], (n_dead,), device=h_flat.device)
+                ]
                 self.codebook[dead] = repl
                 # Reset the EMA accumulator so the revived code is not
                 # immediately re-killed by a stale near-zero cluster size.
@@ -189,7 +191,9 @@ class VQStateQuantizer(nn.Module):
     def _diagnostics(self, idx_flat: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Perplexity (= effective number of codes used) and active-code count."""
         device = idx_flat.device
-        counts = torch.bincount(idx_flat, minlength=self.num_codes).type_as(self.codebook)
+        counts = torch.bincount(idx_flat, minlength=self.num_codes).type_as(
+            self.codebook
+        )
         total = counts.sum().clamp_min(1.0)
         avg_probs = counts / total
         entropy = -(avg_probs * torch.log(avg_probs.clamp_min(1e-10))).sum()

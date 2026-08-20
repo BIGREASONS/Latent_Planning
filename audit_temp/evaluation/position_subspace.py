@@ -123,7 +123,7 @@ def _rowspace_projection(W: np.ndarray) -> np.ndarray:
     rank = int((S > tol).sum())
     if rank == 0:
         return np.zeros((W.shape[1], W.shape[1]))
-    B = Vt[:rank]                       # (rank, D) orthonormal rows
+    B = Vt[:rank]  # (rank, D) orthonormal rows
     return B.T @ B
 
 
@@ -152,7 +152,7 @@ def inlp_position_projection(
     def cumulative_nullspace() -> np.ndarray:
         if not weights:
             return np.eye(D)
-        Wall = np.vstack(weights)               # (sum_C, D)
+        Wall = np.vstack(weights)  # (sum_C, D)
         return np.eye(D) - _rowspace_projection(Wall)
 
     trace: List[float] = []
@@ -199,8 +199,8 @@ def apply_scrub_to_trajectories(
     P_t = torch.as_tensor(np.asarray(P), dtype=torch.float32)
     out: List[Trajectory] = []
     for traj in trajectories:
-        s = traj.states.float()                 # (N+1, H)
-        s_scrub = (s - mean_t) @ P_t            # (N+1, H), P symmetric
+        s = traj.states.float()  # (N+1, H)
+        s_scrub = (s - mean_t) @ P_t  # (N+1, H), P symmetric
         n_states = s_scrub.shape[0]
         out.append(
             Trajectory(

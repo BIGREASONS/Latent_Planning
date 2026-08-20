@@ -88,13 +88,18 @@ def train_decoder_model(
             loss_sum += loss.item() * bs
             correct += (logits.argmax(-1) == batch["target"]).sum().item()
             n += bs
-            
+
             if step_idx % 10 == 0:
-                print(f"  [Epoch {epoch+1}/{config.epochs} | Step {step_idx}/{len(train_loader)}] Loss: {loss.item():.4f}")
-                
-        record = {"epoch": epoch, "step": epoch,
-                  "loss": loss_sum / max(n, 1),
-                  "accuracy": correct / max(n, 1)}
+                print(
+                    f"  [Epoch {epoch+1}/{config.epochs} | Step {step_idx}/{len(train_loader)}] Loss: {loss.item():.4f}"
+                )
+
+        record = {
+            "epoch": epoch,
+            "step": epoch,
+            "loss": loss_sum / max(n, 1),
+            "accuracy": correct / max(n, 1),
+        }
         if val_loader is not None:
             ev = _eval(model, val_loader)
             record["eval_loss"] = ev["loss"]
@@ -109,7 +114,9 @@ def main():
     parser.add_argument("--train_traj", type=str, required=True)
     parser.add_argument("--val_traj", type=str, default=None)
     parser.add_argument("--vocab_size", type=int, required=True)
-    parser.add_argument("--output", type=str, default="checkpoints/diagnostic_decoder.pt")
+    parser.add_argument(
+        "--output", type=str, default="checkpoints/diagnostic_decoder.pt"
+    )
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--lr", type=float, default=1e-3)
     args = parser.parse_args()
@@ -120,12 +127,19 @@ def main():
     model = train_decoder_model(train_trajs, args.vocab_size, val_trajs, config)
 
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
-    torch.save({"state_dict": model.state_dict(),
-                "hidden_dim": model.hidden_dim,
-                "vocab_size": model.vocab_size}, args.output)
+    torch.save(
+        {
+            "state_dict": model.state_dict(),
+            "hidden_dim": model.hidden_dim,
+            "vocab_size": model.vocab_size,
+        },
+        args.output,
+    )
     final = config.history[-1]
-    print(f"Done. Final train acc={final['accuracy']:.4f}"
-          + (f" val acc={final['eval_accuracy']:.4f}" if "eval_accuracy" in final else ""))
+    print(
+        f"Done. Final train acc={final['accuracy']:.4f}"
+        + (f" val acc={final['eval_accuracy']:.4f}" if "eval_accuracy" in final else "")
+    )
 
 
 if __name__ == "__main__":

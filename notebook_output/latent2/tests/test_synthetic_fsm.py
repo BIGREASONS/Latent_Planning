@@ -16,8 +16,8 @@ def test_shapes_and_alignment():
     trajs, true = generate_dataset(T, 20, hidden_dim=16, seed=0)
     assert len(trajs) == len(true) == 20
     for tr, s in zip(trajs, true):
-        assert tr.states.shape[0] == s.shape[0]          # one embedding per state
-        assert tr.op_ids.shape[0] == s.shape[0] - 1       # one action per transition
+        assert tr.states.shape[0] == s.shape[0]  # one embedding per state
+        assert tr.op_ids.shape[0] == s.shape[0] - 1  # one action per transition
     assert flatten_true_states(true).shape[0] == sum(t.states.shape[0] for t in trajs)
 
 
@@ -59,7 +59,8 @@ def test_shared_prototypes_transfer_across_splits():
     """
     from training.train_vq import train_vq_quantizer, VQTrainConfig
     from data_processing.discrete_trajectory_dataset import (
-        encode_trajectories_to_codes, all_codes,
+        encode_trajectories_to_codes,
+        all_codes,
     )
     from sklearn.metrics import adjusted_mutual_info_score
 
@@ -67,33 +68,43 @@ def test_shared_prototypes_transfer_across_splits():
     T = generate_fsm(K, 3, seed=0)
     protos = make_prototypes(K, hidden_dim=H, seed=7)
 
-    tr, _ = generate_dataset(T, 300, H, noise=0.3, structured=True, seed=0, protos=protos)
-    va, ts_va = generate_dataset(T, 150, H, noise=0.3, structured=True, seed=1, protos=protos)
-    vq = train_vq_quantizer(tr, va, config=VQTrainConfig(num_codes=K, epochs=12,
-                                                         batch_size=256, seed=0))
+    tr, _ = generate_dataset(
+        T, 300, H, noise=0.3, structured=True, seed=0, protos=protos
+    )
+    va, ts_va = generate_dataset(
+        T, 150, H, noise=0.3, structured=True, seed=1, protos=protos
+    )
+    vq = train_vq_quantizer(
+        tr, va, config=VQTrainConfig(num_codes=K, epochs=12, batch_size=256, seed=0)
+    )
     shared_codes = all_codes(encode_trajectories_to_codes(vq, va)).numpy()
-    assert len(np.unique(shared_codes)) >= K // 2          # eval does NOT collapse
+    assert len(np.unique(shared_codes)) >= K // 2  # eval does NOT collapse
     ami_shared = adjusted_mutual_info_score(flatten_true_states(ts_va), shared_codes)
-    assert ami_shared > 0.5                                # codes recover eval states
+    assert ami_shared > 0.5  # codes recover eval states
 
     # Guard: an independently-seeded eval split (own prototypes) lands on an
     # unrelated point cloud, so its codes no longer track the true states.
     va_indep, ts_indep = generate_dataset(T, 150, H, noise=0.3, structured=True, seed=1)
     indep_codes = all_codes(encode_trajectories_to_codes(vq, va_indep)).numpy()
     ami_indep = adjusted_mutual_info_score(flatten_true_states(ts_indep), indep_codes)
-    assert ami_indep < 0.2                                 # the bug this guards against
-    assert ami_shared > ami_indep + 0.3                    # sharing is decisively better
+    assert ami_indep < 0.2  # the bug this guards against
+    assert ami_shared > ami_indep + 0.3  # sharing is decisively better
 
 
 def _nearest_prototype_purity(T, structured):
     num_states = T.shape[0]
     trajs, true = generate_dataset(
-        T, 400, hidden_dim=32, noise=0.3, structured=structured, seed=3)
+        T, 400, hidden_dim=32, noise=0.3, structured=structured, seed=3
+    )
     X = np.concatenate([t.states.numpy() for t in trajs], axis=0)
     y = flatten_true_states(true)
     # Empirical per-state means, then nearest-mean classification accuracy.
-    means = np.stack([X[y == s].mean(0) if (y == s).any() else np.zeros(X.shape[1])
-                      for s in range(num_states)])
+    means = np.stack(
+        [
+            X[y == s].mean(0) if (y == s).any() else np.zeros(X.shape[1])
+            for s in range(num_states)
+        ]
+    )
     d = ((X[:, None, :] - means[None]) ** 2).sum(-1)
     pred = d.argmin(1)
     return float((pred == y).mean())

@@ -3,6 +3,7 @@ import numpy as np
 import scipy.stats as stats
 import os
 
+
 def main():
     # Phase 3 Audited Raw Results
     data = [
@@ -28,21 +29,23 @@ def main():
         mean = arch_data.mean()
         std = arch_data.std(ddof=1)
         se = std / np.sqrt(n)
-        
+
         # 95% CI using t-distribution (df = n-1)
-        t_crit = stats.t.ppf(0.975, df=n-1)
+        t_crit = stats.t.ppf(0.975, df=n - 1)
         ci_half_width = t_crit * se
-        
-        summary.append({
-            "Architecture": arch.capitalize(),
-            "N": n,
-            "Mean": mean,
-            "SD": std,
-            "SE": se,
-            "95% CI Half-Width": ci_half_width,
-            "CI Lower": mean - ci_half_width,
-            "CI Upper": mean + ci_half_width
-        })
+
+        summary.append(
+            {
+                "Architecture": arch.capitalize(),
+                "N": n,
+                "Mean": mean,
+                "SD": std,
+                "SE": se,
+                "95% CI Half-Width": ci_half_width,
+                "CI Lower": mean - ci_half_width,
+                "CI Upper": mean + ci_half_width,
+            }
+        )
 
     summary_df = pd.DataFrame(summary)
     summary_df.to_csv("analysis/summary_statistics.csv", index=False)
@@ -54,62 +57,69 @@ def main():
         sum_w = sum(w)
         means = [np.mean(g) for g in groups]
         x_bar_w = sum(w_i * m_i for w_i, m_i in zip(w, means)) / sum_w
-        
-        num = sum(w_i * (m_i - x_bar_w)**2 for w_i, m_i in zip(w, means)) / (k - 1)
-        
-        lambda_val = sum((1 - w_i / sum_w)**2 / (len(g) - 1) for w_i, g in zip(w, groups))
+
+        num = sum(w_i * (m_i - x_bar_w) ** 2 for w_i, m_i in zip(w, means)) / (k - 1)
+
+        lambda_val = sum(
+            (1 - w_i / sum_w) ** 2 / (len(g) - 1) for w_i, g in zip(w, groups)
+        )
         den = 1 + 2 * (k - 2) / (k**2 - 1) * lambda_val
-        
+
         F = num / den
         df1 = k - 1
         df2 = (k**2 - 1) / (3 * lambda_val)
-        
+
         p = stats.f.sf(F, df1, df2)
         return F, p, df1, df2
 
     groups = [
         df[df["Architecture"] == "linear"]["Oracle Gap"].values,
         df[df["Architecture"] == "mlp"]["Oracle Gap"].values,
-        df[df["Architecture"] == "transformer"]["Oracle Gap"].values
+        df[df["Architecture"] == "transformer"]["Oracle Gap"].values,
     ]
     F_welch, p_welch, df1, df2 = welch_anova(groups)
 
     # 3. Pairwise Welch t-tests
-    pairs = [
-        ("linear", "mlp"),
-        ("linear", "transformer"),
-        ("mlp", "transformer")
-    ]
+    pairs = [("linear", "mlp"), ("linear", "transformer"), ("mlp", "transformer")]
 
     tests = []
     for p1, p2 in pairs:
         g1 = df[df["Architecture"] == p1]["Oracle Gap"].values
         g2 = df[df["Architecture"] == p2]["Oracle Gap"].values
-        
+
         res = stats.ttest_ind(g1, g2, equal_var=False)
         t_stat = res.statistic
         p_val = res.pvalue
-        
+
         # Cohen's d (pooled standard deviation)
         n1, n2 = len(g1), len(g2)
         var1, var2 = np.var(g1, ddof=1), np.var(g2, ddof=1)
-        pooled_sd = np.sqrt(((n1-1)*var1 + (n2-1)*var2) / (n1+n2-2))
+        pooled_sd = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))
         d = (np.mean(g1) - np.mean(g2)) / pooled_sd
-        
-        tests.append({
-            "Comparison": f"{p1.capitalize()} vs {p2.capitalize()}",
-            "t-statistic": t_stat,
-            "df": res.df if hasattr(res, 'df') else (var1/n1 + var2/n2)**2 / ((var1/n1)**2/(n1-1) + (var2/n2)**2/(n2-1)),
-            "p-value (uncorrected)": p_val,
-            "Cohen's d": d
-        })
+
+        tests.append(
+            {
+                "Comparison": f"{p1.capitalize()} vs {p2.capitalize()}",
+                "t-statistic": t_stat,
+                "df": (
+                    res.df
+                    if hasattr(res, "df")
+                    else (var1 / n1 + var2 / n2) ** 2
+                    / ((var1 / n1) ** 2 / (n1 - 1) + (var2 / n2) ** 2 / (n2 - 1))
+                ),
+                "p-value (uncorrected)": p_val,
+                "Cohen's d": d,
+            }
+        )
 
     tests_df = pd.DataFrame(tests)
 
     # Multiple comparison correction (Holm-Bonferroni)
     tests_df = tests_df.sort_values("p-value (uncorrected)")
     tests_df["Rank"] = range(1, len(tests_df) + 1)
-    tests_df["p-value (Holm corrected)"] = np.minimum(1, tests_df["p-value (uncorrected)"] * (len(tests_df) - tests_df["Rank"] + 1))
+    tests_df["p-value (Holm corrected)"] = np.minimum(
+        1, tests_df["p-value (uncorrected)"] * (len(tests_df) - tests_df["Rank"] + 1)
+    )
     tests_df["p-value (Holm corrected)"] = tests_df["p-value (Holm corrected)"].cummax()
 
     tests_df.to_csv("analysis/hypothesis_tests.csv", index=False)
@@ -136,7 +146,7 @@ Multiple comparisons corrected using Holm-Bonferroni.
 
 ## 4. Conclusion
 """
-    
+
     if p_welch < 0.05:
         report += "The Welch's ANOVA indicates a statistically significant difference in Oracle Gap between at least two architectures at α=0.05.\n"
     else:
@@ -144,8 +154,9 @@ Multiple comparisons corrected using Holm-Bonferroni.
 
     with open("analysis/report.md", "w") as f:
         f.write(report)
-        
+
     print("Analysis complete. Check the 'analysis' directory.")
+
 
 if __name__ == "__main__":
     main()

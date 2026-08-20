@@ -18,7 +18,8 @@ from __future__ import annotations
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import argparse
 
@@ -58,7 +59,8 @@ def generate_phase_b_report(
     lines.append(
         "The Oracle Transition returns the **exact teacher hidden state** at "
         "each depth. It performs no learning and no prediction. It establishes "
-        "the theoretical maximum coherence achievable under perfect dynamics.\n")
+        "the theoretical maximum coherence achievable under perfect dynamics.\n"
+    )
 
     # ---- Sanity check ----
     lines.append("## 0. Sanity Check\n")
@@ -69,11 +71,13 @@ def generate_phase_b_report(
     if all_cos_one and all_mse_zero:
         lines.append(
             "✅ **PASS**: Oracle cosine ≈ 1.0 and Oracle MSE ≈ 0.0 at all "
-            "depths. The Oracle is correctly returning the exact teacher state.\n")
+            "depths. The Oracle is correctly returning the exact teacher state.\n"
+        )
     else:
         lines.append(
             "⚠️ **FAIL**: Oracle cosine or MSE deviates from expected values. "
-            "There may be a bug in the Oracle implementation.\n")
+            "There may be a bug in the Oracle implementation.\n"
+        )
         lines.append(f"  Cosine values: {oracle_cos_vals}")
         lines.append(f"  MSE values: {oracle_mse_vals}\n")
 
@@ -83,21 +87,23 @@ def generate_phase_b_report(
         "Since the Oracle returns the exact teacher state, its cosine and MSE "
         "are trivially perfect. The informative metric is **probe accuracy**: "
         "how much task information do the *teacher states themselves* contain "
-        "at each depth?\n")
-    lines.append(
-        "| Depth | Oracle State Acc | Oracle Op Acc | n_samples |")
+        "at each depth?\n"
+    )
+    lines.append("| Depth | Oracle State Acc | Oracle Op Acc | n_samples |")
     lines.append("|---|---|---|---|")
     for _, r in ov.iterrows():
         lines.append(
             f"| {int(r['depth'])} | {r['state_probe_accuracy']:.3f} | "
-            f"{r['operator_accuracy']:.3f} | {int(r['n_samples'])} |")
+            f"{r['operator_accuracy']:.3f} | {int(r['n_samples'])} |"
+        )
     lines.append("")
 
     # ---- Question 2: Transition error vs representation limitation ----
     lines.append("## 2. Transition Learning Error vs Representation Limitations\n")
     lines.append(
         "The **Oracle Gain** at each depth measures how much coherence the "
-        "learned transition model leaves on the table.\n")
+        "learned transition model leaves on the table.\n"
+    )
 
     # Cosine gain table
     lines.append("### Cosine Similarity Gain\n")
@@ -112,18 +118,22 @@ def generate_phase_b_report(
             gain = o_cos[0] - a_cos[0]
             lines.append(
                 f"| {d} | {o_cos[0]:.3f} | {a_cos[0]:.3f} | "
-                f"{b_cos[0]:.3f} | {gain:+.3f} |")
+                f"{b_cos[0]:.3f} | {gain:+.3f} |"
+            )
     lines.append("")
 
     # State probe gain table
     lines.append("### State Probe Accuracy Gain (Probe A)\n")
     if domain == "game24":
-        lines.append("*Probe A Definition: Game24 (Remaining card multiset encoding)*\n")
+        lines.append(
+            "*Probe A Definition: Game24 (Remaining card multiset encoding)*\n"
+        )
     else:
-        lines.append("*Probe A Definition: Countdown (Remaining operands (25, 50, 75, 100) encoding)*\n")
-        
-    lines.append(
-        "| Depth | Oracle | Action-Cond. | Blind | Oracle Gain |")
+        lines.append(
+            "*Probe A Definition: Countdown (Remaining operands (25, 50, 75, 100) encoding)*\n"
+        )
+
+    lines.append("| Depth | Oracle | Action-Cond. | Blind | Oracle Gain |")
     lines.append("|---|---|---|---|---|")
     for d in ov["depth"].tolist():
         d = int(d)
@@ -134,13 +144,13 @@ def generate_phase_b_report(
             gain = o_s[0] - a_s[0]
             lines.append(
                 f"| {d} | {o_s[0]:.3f} | {a_s[0]:.3f} | "
-                f"{b_s[0]:.3f} | {gain:+.3f} |")
+                f"{b_s[0]:.3f} | {gain:+.3f} |"
+            )
     lines.append("")
 
     # Operator accuracy gain table
     lines.append("### Operator Accuracy Gain (Probe C)\n")
-    lines.append(
-        "| Depth | Oracle | Action-Cond. | Blind | Oracle Gain |")
+    lines.append("| Depth | Oracle | Action-Cond. | Blind | Oracle Gain |")
     lines.append("|---|---|---|---|---|")
     for d in ov["depth"].tolist():
         d = int(d)
@@ -151,7 +161,8 @@ def generate_phase_b_report(
             gain = o_op[0] - a_op[0]
             lines.append(
                 f"| {d} | {o_op[0]:.3f} | {a_op[0]:.3f} | "
-                f"{b_op[0]:.3f} | {gain:+.3f} |")
+                f"{b_op[0]:.3f} | {gain:+.3f} |"
+            )
     lines.append("")
 
     # ---- Action Gain ----
@@ -159,38 +170,42 @@ def generate_phase_b_report(
     lines.append(
         "The **Action Gain** measures how much of the theoretically available "
         "planning signal (Oracle - Blind) is captured by the action conditioning. "
-        "Formula: `(Action - Blind) / (Oracle - Blind)`. Higher is better.\n")
+        "Formula: `(Action - Blind) / (Oracle - Blind)`. Higher is better.\n"
+    )
     lines.append(
-        "| Depth | Cosine Action Gain | State Acc Action Gain | Op Acc Action Gain |")
+        "| Depth | Cosine Action Gain | State Acc Action Gain | Op Acc Action Gain |"
+    )
     lines.append("|---|---|---|---|")
     for d in ov["depth"].tolist():
         d = int(d)
         oc = ov.loc[ov["depth"] == d, "cosine_similarity"].values
         ac = av.loc[av["depth"] == d, "cosine_similarity"].values
         bc = bv.loc[bv["depth"] == d, "cosine_similarity"].values
-        
+
         os_ = ov.loc[ov["depth"] == d, "state_probe_accuracy"].values
         as_ = av.loc[av["depth"] == d, "state_probe_accuracy"].values
         bs_ = bv.loc[bv["depth"] == d, "state_probe_accuracy"].values
-        
+
         oo = ov.loc[ov["depth"] == d, "operator_accuracy"].values
         ao = av.loc[av["depth"] == d, "operator_accuracy"].values
         bo = bv.loc[bv["depth"] == d, "operator_accuracy"].values
-        
+
         def calc_gain(o, a, b):
-            if not (len(o) and len(a) and len(b)): return float("nan")
+            if not (len(o) and len(a) and len(b)):
+                return float("nan")
             denom = o[0] - b[0]
-            if abs(denom) < 1e-4: return float("nan")
+            if abs(denom) < 1e-4:
+                return float("nan")
             return (a[0] - b[0]) / denom
-            
+
         c_gain = calc_gain(oc, ac, bc)
         s_gain = calc_gain(os_, as_, bs_)
         o_gain = calc_gain(oo, ao, bo)
-        
+
         c_str = f"{c_gain:+.3f}" if not np.isnan(c_gain) else "n/a"
         s_str = f"{s_gain:+.3f}" if not np.isnan(s_gain) else "n/a"
         o_str = f"{o_gain:+.3f}" if not np.isnan(o_gain) else "n/a"
-        
+
         if any(not np.isnan(g) for g in [c_gain, s_gain, o_gain]):
             lines.append(f"| {d} | {c_str} | {s_str} | {o_str} |")
     lines.append("")
@@ -199,7 +214,8 @@ def generate_phase_b_report(
     lines.append("## 3. Full Depth-by-Depth Comparison\n")
     lines.append(
         "| Depth | Oracle Cos | Action Cos | Blind Cos | Identity Cos | "
-        "Oracle State | Action State | Blind State | Identity State |")
+        "Oracle State | Action State | Blind State | Identity State |"
+    )
     lines.append("|---|---|---|---|---|---|---|---|---|")
     for d in ov["depth"].tolist():
         d = int(d)
@@ -210,13 +226,13 @@ def generate_phase_b_report(
         os_ = ov.loc[ov["depth"] == d, "state_probe_accuracy"].values
         as_ = av.loc[av["depth"] == d, "state_probe_accuracy"].values
         bs_ = bv.loc[bv["depth"] == d, "state_probe_accuracy"].values
-        is_ = av.loc[av["depth"] == d,
-                      "identity_state_probe_accuracy"].values
+        is_ = av.loc[av["depth"] == d, "identity_state_probe_accuracy"].values
         if all(len(x) for x in [oc, ac, bc, ic, os_, as_, bs_, is_]):
             lines.append(
                 f"| {d} | {oc[0]:.3f} | {ac[0]:.3f} | {bc[0]:.3f} | "
                 f"{ic[0]:.3f} | {os_[0]:.3f} | {as_[0]:.3f} | "
-                f"{bs_[0]:.3f} | {is_[0]:.3f} |")
+                f"{bs_[0]:.3f} | {is_[0]:.3f} |"
+            )
     lines.append("")
 
     # ---- Diagnosis ----
@@ -224,9 +240,10 @@ def generate_phase_b_report(
 
     # Compute average gains across depths
     shared_depths = sorted(
-        set(ov["depth"].tolist()) &
-        set(av["depth"].tolist()) &
-        set(bv["depth"].tolist()))
+        set(ov["depth"].tolist())
+        & set(av["depth"].tolist())
+        & set(bv["depth"].tolist())
+    )
     cos_gains, state_gains, op_gains = [], [], []
     for d in shared_depths:
         d = int(d)
@@ -271,7 +288,8 @@ def generate_phase_b_report(
             "(Oracle) transitions, the teacher hidden states yield low probe "
             "accuracy. The frozen hidden state is not a stable planning state. "
             "The bottleneck is in the **representation itself**, not the "
-            "learned dynamics.\n")
+            "learned dynamics.\n"
+        )
     elif gain_small:
         lines.append(
             "**Case A — Transition model is NOT the bottleneck.** Oracle and "
@@ -279,19 +297,22 @@ def generate_phase_b_report(
             "transition model already captures most of the available dynamics. "
             "The remaining degradation comes from **representation limitations** "
             "— the hidden states themselves lose task information as depth "
-            "increases.\n")
+            "increases.\n"
+        )
     elif gain_large:
         lines.append(
             "**Case B — Transition model IS the bottleneck.** The Oracle "
             "significantly outperforms the action-conditioned transition. The "
             "representation contains usable planning information that the "
             "learned dynamics fail to preserve. Improving the transition model "
-            "(or its training) is the highest-leverage intervention.\n")
+            "(or its training) is the highest-leverage intervention.\n"
+        )
     else:
         lines.append(
             "**Mixed result.** The Oracle gain is moderate, suggesting "
             "contributions from both transition learning error and "
-            "representation limitations. Further investigation is needed.\n")
+            "representation limitations. Further investigation is needed.\n"
+        )
 
     lines.append("---\n")
     lines.append(
@@ -299,7 +320,8 @@ def generate_phase_b_report(
         "Diagnostic. The Oracle performs no learning; it simply returns the "
         "teacher state at each depth. It answers one question: is latent "
         "planning limited by the learned dynamics, or by the representation "
-        "itself?_\n")
+        "itself?_\n"
+    )
 
     os.makedirs(os.path.dirname(os.path.abspath(md_path)), exist_ok=True)
     with open(md_path, "w", encoding="utf-8") as f:
@@ -309,9 +331,14 @@ def generate_phase_b_report(
 # ------------------------------------------------------------------ #
 def main():
     parser = argparse.ArgumentParser(
-        description="Phase B: Oracle Transition Diagnostic")
-    parser.add_argument("--reports_dir", type=str, default="reports",
-                        help="Directory containing Phase A outputs")
+        description="Phase B: Oracle Transition Diagnostic"
+    )
+    parser.add_argument(
+        "--reports_dir",
+        type=str,
+        default="reports",
+        help="Directory containing Phase A outputs",
+    )
     parser.add_argument("--max_depth", type=int, default=8)
     parser.add_argument("--domain", type=str, default="countdown")
     args = parser.parse_args()
@@ -336,7 +363,9 @@ def main():
 
     # Re-fit probes (same as Phase A) to get fitted probe objects
     print("[Phase B] Fitting probes on train data...")
-    probe_df, probe_details, fitted_probes = run_probes(train_trajs, test_trajs, domain=args.domain)
+    probe_df, probe_details, fitted_probes = run_probes(
+        train_trajs, test_trajs, domain=args.domain
+    )
     probe_a = fitted_probes.get("A")
     probe_c = fitted_probes.get("C")
 
@@ -344,7 +373,8 @@ def main():
     print("[Phase B] Evaluating Oracle transition coherence...")
     oracle_df = evaluate_oracle_coherence(
         test_trajs,
-        probe_a=probe_a, probe_c=probe_c,
+        probe_a=probe_a,
+        probe_c=probe_c,
         max_depth=args.max_depth,
         domain=args.domain,
     )
@@ -371,35 +401,45 @@ def main():
     blind_csv = os.path.join(out, "coherence_blind_depth.csv")
 
     if not os.path.exists(action_csv) or not os.path.exists(blind_csv):
-        print("WARNING: Phase A coherence CSVs not found. "
-              "Skipping comparison overlay and report.")
+        print(
+            "WARNING: Phase A coherence CSVs not found. "
+            "Skipping comparison overlay and report."
+        )
         return
 
     action_df = pd.read_csv(action_csv)
     blind_df = pd.read_csv(blind_csv)
-    print(f"  Loaded Phase A action ({len(action_df)} rows) "
-          f"and blind ({len(blind_df)} rows) CSVs.")
+    print(
+        f"  Loaded Phase A action ({len(action_df)} rows) "
+        f"and blind ({len(blind_df)} rows) CSVs."
+    )
 
     # ---- Overlay plot ----
     print("[Phase B] Generating 4-way comparison overlay...")
     plot_comparison_overlay(
-        oracle_df, action_df, blind_df,
+        oracle_df,
+        action_df,
+        blind_df,
         os.path.join(out, "coherence_comparison_overlay.png"),
     )
 
     # ---- Report ----
     print("[Phase B] Generating Phase B Oracle report...")
     generate_phase_b_report(
-        oracle_df, action_df, blind_df,
+        oracle_df,
+        action_df,
+        blind_df,
         os.path.join(out, "phase_b_oracle_report.md"),
         args.domain,
     )
 
     print("\n[Phase B] Done. Artifacts:")
-    for name in ["coherence_oracle_depth.csv",
-                  "coherence_oracle_depth.png",
-                  "coherence_comparison_overlay.png",
-                  "phase_b_oracle_report.md"]:
+    for name in [
+        "coherence_oracle_depth.csv",
+        "coherence_oracle_depth.png",
+        "coherence_comparison_overlay.png",
+        "phase_b_oracle_report.md",
+    ]:
         print(f"  - {os.path.join(out, name)}")
 
 

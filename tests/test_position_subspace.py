@@ -55,14 +55,17 @@ def test_scrub_trajectories_roundtrip_and_kills_signal():
         n_states = N + 1
         bins = [min(int(i / N * 4), 3) for i in range(n_states)]
         states = stage_dirs[bins] + 0.1 * torch.randn(n_states, H)
-        trajs.append(Trajectory(
-            all_hidden=states,
-            input_ids=torch.zeros(n_states, dtype=torch.long),
-            state_indices=torch.arange(n_states),
-            op_ids=torch.zeros(N, dtype=torch.long),
-            operands=torch.zeros(N, 2),
-            numbers=[1, 2, 3], target=6,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=states,
+                input_ids=torch.zeros(n_states, dtype=torch.long),
+                state_indices=torch.arange(n_states),
+                op_ids=torch.zeros(N, dtype=torch.long),
+                operands=torch.zeros(N, 2),
+                numbers=[1, 2, 3],
+                target=6,
+            )
+        )
 
     X, y = build_position_dataset(trajs)
     assert X.shape[0] == y.shape[0] == sum(t.num_steps + 1 for t in trajs)

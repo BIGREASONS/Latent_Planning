@@ -56,7 +56,10 @@ def _aligned_states_dataset(trajectories: List[Trajectory]) -> TensorDataset:
 
 
 def _init_codebook_from_data(
-    model: VQStateQuantizer, train_ds: TensorDataset, device: torch.device, seed: int = 0
+    model: VQStateQuantizer,
+    train_ds: TensorDataset,
+    device: torch.device,
+    seed: int = 0,
 ) -> None:
     """Data-dependent codebook initialization (V5.1 Fix 1).
 
@@ -205,9 +208,7 @@ def main():
         "--train_traj", type=str, required=True, help="Input .pt trajectories file"
     )
     parser.add_argument("--val_traj", type=str, default=None)
-    parser.add_argument(
-        "--output", type=str, default="checkpoints/vq_state.pt"
-    )
+    parser.add_argument("--output", type=str, default="checkpoints/vq_state.pt")
     parser.add_argument("--log_csv", type=str, default="reports/vq_train_log.csv")
     parser.add_argument("--num_codes", type=int, default=256)
     parser.add_argument("--epochs", type=int, default=50)

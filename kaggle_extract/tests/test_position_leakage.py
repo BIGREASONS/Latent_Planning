@@ -14,10 +14,15 @@ def _disc_trajs(n=30, code_fn=None, max_steps=5, seed=0):
             codes = torch.randint(0, 8, (N + 1,), generator=g, dtype=torch.int64)
         else:
             codes = torch.tensor([code_fn(i) for i in range(N + 1)], dtype=torch.int64)
-        trajs.append(DiscreteTrajectory(
-            codes=codes, op_ids=torch.zeros(N, dtype=torch.long),
-            operands=torch.zeros(N, 2), numbers=[1, 2, 3], target=100,
-        ))
+        trajs.append(
+            DiscreteTrajectory(
+                codes=codes,
+                op_ids=torch.zeros(N, dtype=torch.long),
+                operands=torch.zeros(N, 2),
+                numbers=[1, 2, 3],
+                target=100,
+            )
+        )
     return trajs
 
 
@@ -62,4 +67,6 @@ def test_empty_inputs_nan():
     train = []
     test = []
     m = evaluate_position_leakage(train, test, num_codes=8)
-    assert m["position_predictability_score"] != m["position_predictability_score"]  # NaN
+    assert (
+        m["position_predictability_score"] != m["position_predictability_score"]
+    )  # NaN

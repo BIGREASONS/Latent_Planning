@@ -30,15 +30,24 @@ NUM_OPS = len(OP_TO_ID)
 class ActionEncoder(nn.Module):
     """Encodes a symbolic action into a dense vector."""
 
-    def __init__(self, op_embed_dim: int = 16, operand_mean: float = 0.0, operand_std: float = 1.0):
+    def __init__(
+        self,
+        op_embed_dim: int = 16,
+        operand_mean: float = 0.0,
+        operand_std: float = 1.0,
+    ):
         super().__init__()
         self.op_embedding = nn.Embedding(NUM_OPS, op_embed_dim)
-        self.register_buffer("operand_mean", torch.tensor(operand_mean, dtype=torch.float32))
-        self.register_buffer("operand_std", torch.tensor(operand_std, dtype=torch.float32))
+        self.register_buffer(
+            "operand_mean", torch.tensor(operand_mean, dtype=torch.float32)
+        )
+        self.register_buffer(
+            "operand_std", torch.tensor(operand_std, dtype=torch.float32)
+        )
         self.output_dim = op_embed_dim + 2  # + arg1, arg2
 
     def forward(self, op_id: torch.Tensor, operands: torch.Tensor) -> torch.Tensor:
-        op_vec = self.op_embedding(op_id)                # (B, op_embed_dim)
+        op_vec = self.op_embedding(op_id)  # (B, op_embed_dim)
         operand_vec = (operands - self.operand_mean) / self.operand_std  # (B, 2)
         return torch.cat([op_vec, operand_vec], dim=-1)
 
@@ -60,7 +69,7 @@ class TransitionModel(nn.Module):
         self.hidden_dim = hidden_dim
         self.predict_delta = predict_delta
         self.use_action = use_action
-        
+
         if self.use_action:
             self.action_encoder = ActionEncoder(op_embed_dim, operand_mean, operand_std)
             in_dim = hidden_dim + self.action_encoder.output_dim
@@ -87,7 +96,7 @@ class TransitionModel(nn.Module):
             x = torch.cat([h_t, action], dim=-1)
         else:
             x = h_t
-            
+
         out = self.net(x)
         if self.predict_delta:
             return h_t + out
@@ -119,7 +128,7 @@ class LinearTransitionModel(nn.Module):
         self.hidden_dim = hidden_dim
         self.predict_delta = predict_delta
         self.use_action = use_action
-        
+
         if self.use_action:
             self.action_encoder = ActionEncoder(op_embed_dim, operand_mean, operand_std)
             in_dim = hidden_dim + self.action_encoder.output_dim
@@ -128,8 +137,7 @@ class LinearTransitionModel(nn.Module):
             in_dim = hidden_dim
 
         self.net = nn.Sequential(
-            nn.Linear(in_dim, mlp_hidden_dim),
-            nn.Linear(mlp_hidden_dim, hidden_dim)
+            nn.Linear(in_dim, mlp_hidden_dim), nn.Linear(mlp_hidden_dim, hidden_dim)
         )
 
     def forward(
@@ -145,7 +153,7 @@ class LinearTransitionModel(nn.Module):
             x = torch.cat([h_t, action], dim=-1)
         else:
             x = h_t
-            
+
         out = self.net(x)
         if self.predict_delta:
             return h_t + out
@@ -172,18 +180,18 @@ class TransformerTransitionModel(nn.Module):
         self.predict_delta = predict_delta
         self.use_action = use_action
         self.d_model = mlp_hidden_dim // 2
-        
+
         if self.use_action:
             self.action_encoder = ActionEncoder(op_embed_dim, operand_mean, operand_std)
             self.action_proj = nn.Linear(self.action_encoder.output_dim, self.d_model)
         else:
             self.action_encoder = None
-            
+
         self.state_proj_in = nn.Linear(hidden_dim, self.d_model)
-        
+
         # Positional embeddings for STATE (idx 0) and ACTION (idx 1)
         self.pos_emb = nn.Embedding(2, self.d_model)
-        
+
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=self.d_model,
             nhead=nhead,
@@ -192,7 +200,7 @@ class TransformerTransitionModel(nn.Module):
             norm_first=True,
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        
+
         self.state_proj_out = nn.Linear(self.d_model, hidden_dim)
 
     def forward(
@@ -202,18 +210,18 @@ class TransformerTransitionModel(nn.Module):
         operands: torch.Tensor = None,
     ) -> torch.Tensor:
         B = h_t.size(0)
-        
+
         # Project state
         state_emb = self.state_proj_in(h_t)  # (B, d_model)
-        state_emb = state_emb.unsqueeze(1)   # (B, 1, d_model)
-        
+        state_emb = state_emb.unsqueeze(1)  # (B, 1, d_model)
+
         if self.use_action:
             if op_id is None or operands is None:
                 raise ValueError("op_id and operands are required when use_action=True")
             action_raw = self.action_encoder(op_id, operands)
             action_emb = self.action_proj(action_raw)  # (B, d_model)
-            action_emb = action_emb.unsqueeze(1)       # (B, 1, d_model)
-            
+            action_emb = action_emb.unsqueeze(1)  # (B, 1, d_model)
+
             # Sequence: [STATE, ACTION]
             seq = torch.cat([state_emb, action_emb], dim=1)  # (B, 2, d_model)
             positions = torch.arange(2, device=h_t.device).unsqueeze(0).expand(B, 2)
@@ -222,16 +230,16 @@ class TransformerTransitionModel(nn.Module):
             seq = state_emb
             positions = torch.zeros(B, 1, dtype=torch.long, device=h_t.device)
             seq = seq + self.pos_emb(positions)
-            
+
         # Transformer pass
         out_seq = self.transformer(seq)  # (B, SeqLen, d_model)
-        
+
         # Extract STATE token (index 0)
         state_out = out_seq[:, 0, :]  # (B, d_model)
-        
+
         # Project back to full hidden_dim
         out = self.state_proj_out(state_out)  # (B, hidden_dim)
-        
+
         if self.predict_delta:
             return h_t + out
         return out

@@ -32,7 +32,7 @@ def test_reaches_ceiling_when_a_layer_is_deterministic():
     ]
     s = summarize_sweep(rows, FLOOR, CEILING)
     assert s["best_layer"] == 16
-    assert s["reaches_ceiling"] is True          # det 0.45 >= 0.20 and >= 50% of ceiling
+    assert s["reaches_ceiling"] is True  # det 0.45 >= 0.20 and >= 50% of ceiling
 
 
 def test_no_layer_reaches_ceiling_near_floor():
@@ -43,7 +43,7 @@ def test_no_layer_reaches_ceiling_near_floor():
     ]
     s = summarize_sweep(rows, FLOOR, CEILING)
     assert s["best_layer"] == 12
-    assert s["reaches_ceiling"] is False         # 0.11 < 0.20 bar
+    assert s["reaches_ceiling"] is False  # 0.11 < 0.20 bar
     assert len(s["per_layer"]) == 3
 
 
@@ -53,4 +53,4 @@ def test_tie_broken_by_mlp():
         {"layer": 18, "det_action": 0.20, "H_action": 1.2, "mlp_z_op": 0.66},
     ]
     s = summarize_sweep(rows, FLOOR, CEILING)
-    assert s["best_layer"] == 18                 # equal det, higher MLP wins
+    assert s["best_layer"] == 18  # equal det, higher MLP wins

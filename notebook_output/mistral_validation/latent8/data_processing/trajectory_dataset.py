@@ -35,8 +35,9 @@ import torch
 
 from data_processing.action_parser import Action, parse_solution
 
-
-HEADER_TEMPLATE = "Problem: Given the numbers {numbers}, reach the target {target}.\nSolution:\n"
+HEADER_TEMPLATE = (
+    "Problem: Given the numbers {numbers}, reach the target {target}.\nSolution:\n"
+)
 IGNORE_TOKEN = -100  # used for "no next token" (terminal state)
 
 
@@ -49,11 +50,11 @@ def format_header(numbers: List[int], target: int) -> str:
 class Trajectory:
     """One teacher trajectory through latent space for a single problem."""
 
-    all_hidden: torch.Tensor      # (T, H) hidden state for every token
-    input_ids: torch.Tensor       # (T,) token ids
-    state_indices: torch.Tensor   # (N+1,) indices into all_hidden for s_0..s_N
-    op_ids: torch.Tensor          # (N,) action op id for steps 1..N
-    operands: torch.Tensor        # (N, 2) float [arg1, arg2] for steps 1..N
+    all_hidden: torch.Tensor  # (T, H) hidden state for every token
+    input_ids: torch.Tensor  # (T,) token ids
+    state_indices: torch.Tensor  # (N+1,) indices into all_hidden for s_0..s_N
+    op_ids: torch.Tensor  # (N,) action op id for steps 1..N
+    operands: torch.Tensor  # (N, 2) float [arg1, arg2] for steps 1..N
     numbers: List[int]
     target: int
 
@@ -143,15 +144,11 @@ def build_trajectory(
     input_ids = enc["input_ids"][0].detach().cpu()
 
     end_chars = _state_end_chars(header, steps)
-    state_indices = [
-        _token_index_for_char_end(offset_mapping, ec) for ec in end_chars
-    ]
+    state_indices = [_token_index_for_char_end(offset_mapping, ec) for ec in end_chars]
     state_indices = torch.tensor(state_indices, dtype=torch.long)
 
     op_ids = torch.tensor([a.op_id for a in actions], dtype=torch.long)
-    operands = torch.tensor(
-        [[a.arg1, a.arg2] for a in actions], dtype=torch.float32
-    )
+    operands = torch.tensor([[a.arg1, a.arg2] for a in actions], dtype=torch.float32)
 
     return Trajectory(
         all_hidden=hidden,
@@ -173,26 +170,25 @@ def build_trajectories(
 ) -> List[Trajectory]:
     """Build trajectories for a list of problems, skipping unparseable ones, in batches."""
     if not getattr(tokenizer, "is_fast", False):
-        raise ValueError(
-            "A fast tokenizer with offset_mapping support is required."
-        )
-    
+        raise ValueError("A fast tokenizer with offset_mapping support is required.")
+
     # Ensure tokenizer has a pad token
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-        
+
     model.eval()
     trajectories: List[Trajectory] = []
-    
+
     from tqdm import tqdm
+
     for i in tqdm(range(0, len(problems), batch_size), desc="Extracting"):
-        batch = problems[i:i+batch_size]
-        
+        batch = problems[i : i + batch_size]
+
         valid_problems = []
         valid_actions = []
         valid_texts = []
         valid_headers = []
-        
+
         for problem in batch:
             numbers = problem["numbers"]
             target = problem["target"]
@@ -203,52 +199,49 @@ def build_trajectories(
                 actions: List[Action] = parse_solution(steps)
             except ValueError:
                 continue
-                
+
             header = format_header(numbers, target)
             full_text = header + "\n".join(steps)
-            
+
             valid_problems.append(problem)
             valid_actions.append(actions)
             valid_texts.append(full_text)
             valid_headers.append(header)
-            
+
         if not valid_texts:
             continue
-            
+
         enc = tokenizer(
-            valid_texts, 
-            padding=True, 
-            return_tensors="pt", 
-            return_offsets_mapping=True
+            valid_texts, padding=True, return_tensors="pt", return_offsets_mapping=True
         )
         offset_mappings = enc.pop("offset_mapping").tolist()
         attention_mask = enc["attention_mask"]
         enc = {k: v.to(model.device) for k, v in enc.items()}
-        
+
         with torch.no_grad():
             outputs = model(**enc, output_hidden_states=True)
-            
+
         hidden_batch = outputs.hidden_states[layer].detach().cpu().float()
         input_ids_batch = enc["input_ids"].detach().cpu()
         attention_mask_cpu = attention_mask.detach().cpu()
-        
+
         for b_idx in range(len(valid_texts)):
             problem = valid_problems[b_idx]
             actions = valid_actions[b_idx]
             header = valid_headers[b_idx]
             steps = problem["solution"]
-            
+
             pad_mask = attention_mask_cpu[b_idx].bool()
-            
+
             hidden = hidden_batch[b_idx][pad_mask]
             input_ids = input_ids_batch[b_idx][pad_mask]
-            
+
             valid_offsets = [
-                offset_mappings[b_idx][t_idx] 
-                for t_idx in range(len(offset_mappings[b_idx])) 
+                offset_mappings[b_idx][t_idx]
+                for t_idx in range(len(offset_mappings[b_idx]))
                 if pad_mask[t_idx]
             ]
-            
+
             end_chars = _state_end_chars(header, steps)
             try:
                 state_indices = [
@@ -256,13 +249,13 @@ def build_trajectories(
                 ]
             except ValueError:
                 continue
-                
+
             state_indices = torch.tensor(state_indices, dtype=torch.long)
             op_ids = torch.tensor([a.op_id for a in actions], dtype=torch.long)
             operands = torch.tensor(
                 [[a.arg1, a.arg2] for a in actions], dtype=torch.float32
             )
-            
+
             traj = Trajectory(
                 all_hidden=hidden,
                 input_ids=input_ids,
@@ -274,7 +267,7 @@ def build_trajectories(
             )
             if traj.num_steps > 0:
                 trajectories.append(traj)
-                
+
     return trajectories
 
 

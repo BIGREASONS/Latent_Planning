@@ -80,7 +80,9 @@ def _eval_predictability(
         z_next = batch["z_next"].to(device)
         logits = model(z_t)
         probs = F.softmax(logits, dim=-1)
-        entropy_sum += (-(probs * torch.log(probs.clamp_min(1e-10))).sum(dim=-1)).sum().item()
+        entropy_sum += (
+            (-(probs * torch.log(probs.clamp_min(1e-10))).sum(dim=-1)).sum().item()
+        )
         ce_sum += F.cross_entropy(logits, z_next, reduction="sum").item()
         correct += (logits.argmax(-1) == z_next).sum().item()
         n += z_t.shape[0]
@@ -133,7 +135,7 @@ def transition_baselines(
     # Bigram: most frequent successor per current code.
     counts = np.zeros((num_codes, num_codes), dtype=np.int64)
     np.add.at(counts, (zt_tr, zn_tr), 1)
-    bigram_pred = counts.argmax(axis=1)               # (num_codes,)
+    bigram_pred = counts.argmax(axis=1)  # (num_codes,)
     bigram_pred[counts.sum(axis=1) == 0] = majority_code  # unseen i -> majority
     bigram_acc = float((zn_ev == bigram_pred[zt_ev]).mean())
 
@@ -162,9 +164,13 @@ def train_code_transition(
     train_loader = DataLoader(train_ds, batch_size=config.batch_size, shuffle=True)
 
     eval_disc = val_disc if val_disc else train_disc
-    eval_loader = DataLoader(DiscreteTransitionDataset(eval_disc), batch_size=config.batch_size)
+    eval_loader = DataLoader(
+        DiscreteTransitionDataset(eval_disc), batch_size=config.batch_size
+    )
 
-    model = CodeTransitionModel(num_codes, config.embed_dim, config.hidden_dim).to(device)
+    model = CodeTransitionModel(num_codes, config.embed_dim, config.hidden_dim).to(
+        device
+    )
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=config.lr, weight_decay=config.weight_decay
     )
@@ -279,7 +285,9 @@ def save_entropy_report(
     os.makedirs(os.path.dirname(os.path.abspath(csv_path)), exist_ok=True)
     per_state = ent["per_state_entropy"]
     rows = []
-    mask = active_mask if active_mask is not None else np.ones_like(per_state, dtype=bool)
+    mask = (
+        active_mask if active_mask is not None else np.ones_like(per_state, dtype=bool)
+    )
     for i in np.where(mask)[0]:
         rows.append(
             {
@@ -289,8 +297,17 @@ def save_entropy_report(
                 "top1_successor_code": int(T[i].argmax()),
             }
         )
-    summary = pd.DataFrame(rows) if rows else pd.DataFrame(
-        columns=["code", "entropy_nats", "top1_successor_prob", "top1_successor_code"]
+    summary = (
+        pd.DataFrame(rows)
+        if rows
+        else pd.DataFrame(
+            columns=[
+                "code",
+                "entropy_nats",
+                "top1_successor_prob",
+                "top1_successor_code",
+            ]
+        )
     )
     summary.to_csv(csv_path, index=False)
 
@@ -306,22 +323,38 @@ def _plot_entropy(per_state, ent, png_path, active_mask=None) -> None:
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
 
-    mask = active_mask if active_mask is not None else np.ones_like(per_state, dtype=bool)
+    mask = (
+        active_mask if active_mask is not None else np.ones_like(per_state, dtype=bool)
+    )
     vals = per_state[mask]
     if vals.size:
-        ax1.hist(vals, bins=min(40, max(8, int(np.sqrt(vals.size)))),
-                 color="tab:purple", alpha=0.8)
-    ax1.axvline(ent["global_entropy"], color="tab:red", linestyle="--",
-                label=f"global H = {ent['global_entropy']:.3f}")
+        ax1.hist(
+            vals,
+            bins=min(40, max(8, int(np.sqrt(vals.size)))),
+            color="tab:purple",
+            alpha=0.8,
+        )
+    ax1.axvline(
+        ent["global_entropy"],
+        color="tab:red",
+        linestyle="--",
+        label=f"global H = {ent['global_entropy']:.3f}",
+    )
     ax1.set_xlabel("H(Z_next | Z_current = i)  [nats]")
     ax1.set_ylabel("# codes")
     ax1.set_title("Per-state transition entropy")
     ax1.legend()
     ax1.grid(True, linestyle="--", alpha=0.5)
 
-    ax2.bar(["global entropy", "global perplexity", "det. state frac"],
-            [ent["global_entropy"], ent["global_perplexity"], ent["deterministic_state_frac"]],
-            color=["tab:blue", "tab:orange", "tab:green"])
+    ax2.bar(
+        ["global entropy", "global perplexity", "det. state frac"],
+        [
+            ent["global_entropy"],
+            ent["global_perplexity"],
+            ent["deterministic_state_frac"],
+        ],
+        color=["tab:blue", "tab:orange", "tab:green"],
+    )
     ax2.set_title("Transition entropy summary")
     ax2.grid(True, linestyle="--", alpha=0.5, axis="y")
 

@@ -36,7 +36,7 @@ from itertools import combinations_with_replacement
 from typing import Any, Dict, List, Optional, Tuple
 
 TARGET = 24
-CARD_MIN, CARD_MAX = 1, 13   # classic 4-card range
+CARD_MIN, CARD_MAX = 1, 13  # classic 4-card range
 NUM_CARDS = 4
 
 # (value, steps) item: a number on the table plus the steps that produced it.
@@ -94,6 +94,7 @@ def _solve(items: List[Item], target: int) -> Optional[List[str]]:
 # Exhaustive solvable-pool enumeration
 # --------------------------------------------------------------------------- #
 
+
 def enumerate_solvable_pool() -> List[Tuple[int, ...]]:
     """Return every unique solvable 4-card multiset from {1..13}.
 
@@ -110,7 +111,9 @@ def enumerate_solvable_pool() -> List[Tuple[int, ...]]:
     return pool
 
 
-def generate_game24_problem(rng: random.Random, max_attempts: int = 2000) -> Dict[str, Any]:
+def generate_game24_problem(
+    rng: random.Random, max_attempts: int = 2000
+) -> Dict[str, Any]:
     """Sample four cards with an integer-only solution to 24; return the record.
 
     This function is retained for backward compatibility with existing tests and
@@ -208,12 +211,16 @@ def generate_partitioned_splits(
     n_val = int(n * val_frac)
     # test gets the remainder — guarantees no rounding loss
     train_hands = shuffled[:n_train]
-    val_hands = shuffled[n_train:n_train + n_val]
-    test_hands = shuffled[n_train + n_val:]
+    val_hands = shuffled[n_train : n_train + n_val]
+    test_hands = shuffled[n_train + n_val :]
 
     os.makedirs(output_dir, exist_ok=True)
     sizes = {}
-    for split_name, hands in [("train", train_hands), ("val", val_hands), ("test", test_hands)]:
+    for split_name, hands in [
+        ("train", train_hands),
+        ("val", val_hands),
+        ("test", test_hands),
+    ]:
         path = os.path.join(output_dir, f"{split_name}.jsonl")
         with open(path, "w") as f:
             for hand in hands:
@@ -227,19 +234,31 @@ def main():
     parser = argparse.ArgumentParser(description="Generate Game-of-24 dataset")
     parser.add_argument("--output_dir", type=str, default="data/game24")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--train_frac", type=float, default=0.8,
-                        help="Fraction of solvable pool for training (default 0.8)")
-    parser.add_argument("--val_frac", type=float, default=0.1,
-                        help="Fraction of solvable pool for validation (default 0.1)")
+    parser.add_argument(
+        "--train_frac",
+        type=float,
+        default=0.8,
+        help="Fraction of solvable pool for training (default 0.8)",
+    )
+    parser.add_argument(
+        "--val_frac",
+        type=float,
+        default=0.1,
+        help="Fraction of solvable pool for validation (default 0.1)",
+    )
     args = parser.parse_args()
 
     pool = enumerate_solvable_pool()
-    print(f"Game-of-24 solvable pool: {len(pool)} unique hands "
-          f"(out of 1820 multisets = {len(pool)/1820:.1%})")
+    print(
+        f"Game-of-24 solvable pool: {len(pool)} unique hands "
+        f"(out of 1820 multisets = {len(pool)/1820:.1%})"
+    )
 
     sizes = generate_partitioned_splits(
-        args.output_dir, seed=args.seed,
-        train_frac=args.train_frac, val_frac=args.val_frac,
+        args.output_dir,
+        seed=args.seed,
+        train_frac=args.train_frac,
+        val_frac=args.val_frac,
     )
     print(f"Partitioned into mutually exclusive splits:")
     for split, n in sizes.items():

@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser(description="Latent Planning Postflight Validator")
     parser.add_argument("--out_dir", required=True, help="Output directory to validate")
@@ -10,7 +11,7 @@ def main():
     print(f"=== LATENT PLANNING POSTFLIGHT VALIDATION ===")
     print(f"Checking artifacts in: {args.out_dir}")
     print("-" * 40)
-    
+
     if not os.path.exists(args.out_dir):
         print(f"[FAIL] Output directory '{args.out_dir}' does not exist.")
         sys.exit(1)
@@ -25,7 +26,7 @@ def main():
         "transition_model_blind.pt",
         "trajectories/train.pt",
         "trajectories/test.pt",
-        "trajectories/val.pt"
+        "trajectories/val.pt",
     ]
 
     missing = []
@@ -44,11 +45,14 @@ def main():
 
     print("-" * 40)
     if missing:
-        print(f"❌ POSTFLIGHT FAILED: {len(missing)} expected artifacts are missing or empty.")
+        print(
+            f"❌ POSTFLIGHT FAILED: {len(missing)} expected artifacts are missing or empty."
+        )
         print(f"Missing: {missing}")
         sys.exit(1)
     else:
         print("✅ POSTFLIGHT PASSED: All expected artifacts generated successfully.")
+
 
 if __name__ == "__main__":
     main()

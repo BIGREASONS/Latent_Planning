@@ -22,15 +22,17 @@ def _toy_trajectories(n=8, H=16, steps=3, seed=0):
         for i in range(steps):
             s = s + op_shifts[op_ids[i]]
             all_hidden[i + 1] = s
-        trajs.append(Trajectory(
-            all_hidden=all_hidden,
-            input_ids=torch.zeros(T, dtype=torch.long),
-            state_indices=state_indices,
-            op_ids=op_ids,
-            operands=operands,
-            numbers=[1, 2, 3, 4, 5, 6],
-            target=10,
-        ))
+        trajs.append(
+            Trajectory(
+                all_hidden=all_hidden,
+                input_ids=torch.zeros(T, dtype=torch.long),
+                state_indices=state_indices,
+                op_ids=op_ids,
+                operands=operands,
+                numbers=[1, 2, 3, 4, 5, 6],
+                target=10,
+            )
+        )
     return trajs
 
 

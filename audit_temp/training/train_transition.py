@@ -61,7 +61,7 @@ def train_transition_model(
     train_ds = TransitionDataset(train_trajs)
     if len(train_ds) == 0:
         raise ValueError("No transitions in training trajectories.")
-    
+
     operands_tensor = torch.stack([x for x in train_ds.operands])
     operand_mean = operands_tensor.mean().item()
     operand_std = operands_tensor.std().item() + 1e-8
@@ -125,11 +125,15 @@ def main():
     parser.add_argument("--train_traj", type=str, required=True)
     parser.add_argument("--val_traj", type=str, default=None)
     parser.add_argument("--output", type=str, default="checkpoints/transition_model.pt")
-    parser.add_argument("--log_csv", type=str, default="reports/transition_train_log.csv")
+    parser.add_argument(
+        "--log_csv", type=str, default="reports/transition_train_log.csv"
+    )
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--mlp_hidden_dim", type=int, default=512)
-    parser.add_argument("--no_delta", action="store_true", help="Predict h_next directly")
+    parser.add_argument(
+        "--no_delta", action="store_true", help="Predict h_next directly"
+    )
     args = parser.parse_args()
 
     train_trajs = load_trajectories(args.train_traj)
@@ -144,13 +148,20 @@ def main():
     model = train_transition_model(train_trajs, val_trajs, config)
 
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
-    torch.save({"state_dict": model.state_dict(),
-                "hidden_dim": model.hidden_dim,
-                "config": config.__dict__}, args.output)
+    torch.save(
+        {
+            "state_dict": model.state_dict(),
+            "hidden_dim": model.hidden_dim,
+            "config": config.__dict__,
+        },
+        args.output,
+    )
     save_history_csv(config.history, args.log_csv)
     final = config.history[-1]
-    print(f"Done. Final train MSE={final['loss']:.5f}"
-          + (f" val MSE={final['eval_loss']:.5f}" if "eval_loss" in final else ""))
+    print(
+        f"Done. Final train MSE={final['loss']:.5f}"
+        + (f" val MSE={final['eval_loss']:.5f}" if "eval_loss" in final else "")
+    )
 
 
 if __name__ == "__main__":

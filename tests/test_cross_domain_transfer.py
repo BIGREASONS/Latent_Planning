@@ -17,12 +17,17 @@ def _toy_trajs(centers, n=20, H=12, seed=0):
         N = 4
         idx = torch.randint(0, len(centers), (N + 1,), generator=g)
         states = centers[idx] + 0.05 * torch.randn(N + 1, H, generator=g)
-        out.append(Trajectory(
-            all_hidden=states, input_ids=torch.zeros(N + 1, dtype=torch.long),
-            state_indices=torch.arange(N + 1),
-            op_ids=torch.zeros(N, dtype=torch.long),
-            operands=torch.zeros(N, 2), numbers=[1, 2, 3], target=100,
-        ))
+        out.append(
+            Trajectory(
+                all_hidden=states,
+                input_ids=torch.zeros(N + 1, dtype=torch.long),
+                state_indices=torch.arange(N + 1),
+                op_ids=torch.zeros(N, dtype=torch.long),
+                operands=torch.zeros(N, 2),
+                numbers=[1, 2, 3],
+                target=100,
+            )
+        )
     return out
 
 
@@ -32,7 +37,9 @@ def test_near_domain_high_reuse():
     H, K = 12, 8
     centers = torch.randn(4, H)
     train = _toy_trajs(centers, n=30, seed=0)
-    vq = train_vq_quantizer(train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128))
+    vq = train_vq_quantizer(
+        train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128)
+    )
     disc_train = encode_trajectories_to_codes(vq, train)
     # Near domain: same centers + small noise.
     near = _toy_trajs(centers + 0.05, n=15, seed=1)
@@ -48,7 +55,9 @@ def test_arithmetic_reference_present():
     H, K = 12, 8
     centers = torch.randn(4, H)
     train = _toy_trajs(centers, n=20, seed=0)
-    vq = train_vq_quantizer(train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128))
+    vq = train_vq_quantizer(
+        train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128)
+    )
     disc_train = encode_trajectories_to_codes(vq, train)
     res = evaluate_cross_domain_transfer(vq, disc_train, {}, num_codes=K)
     assert "arithmetic" in res
@@ -62,7 +71,9 @@ def test_entropy_delta_sign():
     H, K = 12, 8
     centers = torch.randn(4, H)
     train = _toy_trajs(centers, n=30, seed=0)
-    vq = train_vq_quantizer(train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128))
+    vq = train_vq_quantizer(
+        train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128)
+    )
     disc_train = encode_trajectories_to_codes(vq, train)
     far_centers = torch.randn(6, H) * 3  # very different region
     far = _toy_trajs(far_centers, n=15, seed=2)
@@ -77,7 +88,9 @@ def test_empty_domain_graceful():
     H, K = 12, 8
     centers = torch.randn(4, H)
     train = _toy_trajs(centers, n=20, seed=0)
-    vq = train_vq_quantizer(train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128))
+    vq = train_vq_quantizer(
+        train, config=VQTrainConfig(num_codes=K, epochs=50, batch_size=128)
+    )
     disc_train = encode_trajectories_to_codes(vq, train)
     res = evaluate_cross_domain_transfer(vq, disc_train, {"empty": []}, num_codes=K)
     assert res["empty"].get("error") is not None

@@ -34,9 +34,9 @@ from models.vq_state import VQStateQuantizer
 class DiscreteTrajectory:
     """One trajectory through *discrete* code space for a single problem."""
 
-    codes: torch.Tensor       # (N+1,) int64 code id per state s_0..s_N
-    op_ids: torch.Tensor      # (N,) action op id for steps 1..N
-    operands: torch.Tensor    # (N, 2) float operands for steps 1..N
+    codes: torch.Tensor  # (N+1,) int64 code id per state s_0..s_N
+    op_ids: torch.Tensor  # (N,) action op id for steps 1..N
+    operands: torch.Tensor  # (N, 2) float operands for steps 1..N
     numbers: List[int]
     target: int
 

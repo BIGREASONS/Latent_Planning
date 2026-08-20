@@ -30,15 +30,24 @@ NUM_OPS = len(OP_TO_ID)
 class ActionEncoder(nn.Module):
     """Encodes a symbolic action into a dense vector."""
 
-    def __init__(self, op_embed_dim: int = 16, operand_mean: float = 0.0, operand_std: float = 1.0):
+    def __init__(
+        self,
+        op_embed_dim: int = 16,
+        operand_mean: float = 0.0,
+        operand_std: float = 1.0,
+    ):
         super().__init__()
         self.op_embedding = nn.Embedding(NUM_OPS, op_embed_dim)
-        self.register_buffer("operand_mean", torch.tensor(operand_mean, dtype=torch.float32))
-        self.register_buffer("operand_std", torch.tensor(operand_std, dtype=torch.float32))
+        self.register_buffer(
+            "operand_mean", torch.tensor(operand_mean, dtype=torch.float32)
+        )
+        self.register_buffer(
+            "operand_std", torch.tensor(operand_std, dtype=torch.float32)
+        )
         self.output_dim = op_embed_dim + 2  # + arg1, arg2
 
     def forward(self, op_id: torch.Tensor, operands: torch.Tensor) -> torch.Tensor:
-        op_vec = self.op_embedding(op_id)                # (B, op_embed_dim)
+        op_vec = self.op_embedding(op_id)  # (B, op_embed_dim)
         operand_vec = (operands - self.operand_mean) / self.operand_std  # (B, 2)
         return torch.cat([op_vec, operand_vec], dim=-1)
 
@@ -60,7 +69,7 @@ class TransitionModel(nn.Module):
         self.hidden_dim = hidden_dim
         self.predict_delta = predict_delta
         self.use_action = use_action
-        
+
         if self.use_action:
             self.action_encoder = ActionEncoder(op_embed_dim, operand_mean, operand_std)
             in_dim = hidden_dim + self.action_encoder.output_dim
@@ -87,7 +96,7 @@ class TransitionModel(nn.Module):
             x = torch.cat([h_t, action], dim=-1)
         else:
             x = h_t
-            
+
         out = self.net(x)
         if self.predict_delta:
             return h_t + out

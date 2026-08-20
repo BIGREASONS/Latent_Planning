@@ -39,7 +39,9 @@ from models.vq_state import VQStateQuantizer
 
 
 def _code_distribution(codes: torch.Tensor, num_codes: int) -> np.ndarray:
-    counts = np.bincount(codes.detach().cpu().numpy(), minlength=num_codes).astype(np.float64)
+    counts = np.bincount(codes.detach().cpu().numpy(), minlength=num_codes).astype(
+        np.float64
+    )
     s = counts.sum()
     return counts / s if s > 0 else counts
 
