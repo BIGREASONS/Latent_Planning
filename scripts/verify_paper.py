@@ -15,7 +15,7 @@ def verify():
     expected_values = [
         '0.1944', '0.1789', '0.1860', # Oracle Gap
         '-0.0339', '-0.0183', '-0.0254', # SG
-        '0.9411', '0.9461', '0.9466', # Cosine
+        '0.9410', '0.9466', '0.9464', # Cosine (from raw table)
         '1.160', '0.409', # Welch ANOVA
         '0.604', '0.590'  # Blocked ANOVA
     ]
