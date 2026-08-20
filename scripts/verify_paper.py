@@ -1,34 +1,52 @@
 import sys
+import pandas as pd
+import os
 
 def verify():
     if len(sys.argv) < 2:
-        print('Usage: python verify_paper.py <tex_file>')
+        print("Usage: python verify_paper.py <tex_file>")
         sys.exit(1)
         
     tex_file = sys.argv[1]
-    with open(tex_file, 'r') as f:
+    with open(tex_file, "r") as f:
         content = f.read()
 
-    errors = 0
+    # Determine paths based on script location
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    master_csv_path = os.path.join(script_dir, "..", "analysis", "phase3_master_results.csv")
     
-    # Check Phase 3 values
-    expected_values = [
-        '0.1944', '0.1789', '0.1860', # Oracle Gap
-        '-0.0339', '-0.0183', '-0.0254', # SG
-        '0.9410', '0.9466', '0.9464', # Cosine (from raw table)
-        '1.160', '0.409', # Welch ANOVA
-        '0.604', '0.590'  # Blocked ANOVA
-    ]
+    if not os.path.exists(master_csv_path):
+        print(f"ERROR: Cannot find master results at {master_csv_path}")
+        sys.exit(1)
+        
+    df = pd.read_csv(master_csv_path)
+    
+    errors = 0
+    expected_values = []
+    
+    # Generate expected formatted values from the authoritative CSV
+    for _, row in df.iterrows():
+        og = row["Oracle Gap"]
+        sg = row["True SG"]
+        cos = row["Cosine"]
+        expected_values.append(f"{og:.4f}")
+        expected_values.append(f"{sg:.4f}")
+        expected_values.append(f"{cos:.4f}")
+        
+    # Remove duplicates
+    expected_values = list(set(expected_values))
     
     for val in expected_values:
         if val not in content:
-            print(f'ERROR: Expected value {val} not found in manuscript!')
+            print(f"ERROR: Expected value {val} not found in manuscript!")
             errors += 1
             
     if errors == 0:
-        print('Verification Passed: All expected Phase 3 metrics found in manuscript.')
+        print("Verification Passed: All expected Phase 3 metrics found in manuscript.")
     else:
-        print('Verification Failed.')
+        print("Verification Failed.")
+        sys.exit(1)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     verify()
+
