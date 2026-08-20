@@ -1,0 +1,45 @@
+Claim,Authoritative,In Manuscript,Location,Status
+Linear OG mean,0.1944,True,Abstract+TableII,EXACT MATCH
+MLP OG mean,0.1789,True,Abstract+TableII,EXACT MATCH
+Transformer OG mean,0.1860,True,Abstract+TableII,EXACT MATCH
+Linear SG mean,-0.0339,True,TableII,EXACT MATCH
+MLP SG mean,-0.0183,True,TableII,EXACT MATCH
+Transformer SG mean,-0.0254,True,TableII,EXACT MATCH
+Linear OG CI,0.0658,True,TableII,EXACT MATCH
+MLP OG CI,0.0155,True,TableII,EXACT MATCH
+Transformer OG CI,0.0137,True,TableII,EXACT MATCH
+Welch F rounded,1.160,True,Abstract+Intro+Results+TableIII,EXACT MATCH
+Welch p rounded,0.409,True,Abstract+Intro+Results+TableIII,EXACT MATCH
+Blocked F,0.604,True,Results,EXACT MATCH
+Blocked p,0.590,True,Results,EXACT MATCH
+MLP v Trans t,-1.481,True,TableIII,EXACT MATCH
+MLP v Trans d,-1.210,True,TableIII+Results,EXACT MATCH
+Lin v MLP t,0.989,True,TableIII,EXACT MATCH
+Lin v Trans t,0.539,True,TableIII,EXACT MATCH
+linear-42 SG,-0.0196,True,AppendixVI,EXACT MATCH
+linear-42 OG,0.1799,True,AppendixVI,EXACT MATCH
+linear-42 Cos,0.9410,True,AppendixVI,EXACT MATCH
+linear-43 SG,-0.0644,True,AppendixVI,EXACT MATCH
+linear-43 OG,0.2250,True,AppendixVI,EXACT MATCH
+linear-43 Cos,0.9414,True,AppendixVI,EXACT MATCH
+linear-44 SG,-0.0178,True,AppendixVI,EXACT MATCH
+linear-44 OG,0.1784,True,AppendixVI,EXACT MATCH
+linear-44 Cos,0.9409,True,AppendixVI,EXACT MATCH
+mlp-42 SG,-0.0255,True,AppendixVI,EXACT MATCH
+mlp-42 OG,0.1861,True,AppendixVI,EXACT MATCH
+mlp-42 Cos,0.9466,True,AppendixVI,EXACT MATCH
+mlp-43 SG,-0.0149,True,AppendixVI,EXACT MATCH
+mlp-43 OG,0.1755,True,AppendixVI,EXACT MATCH
+mlp-43 Cos,0.9468,True,AppendixVI,EXACT MATCH
+mlp-44 SG,-0.0144,True,AppendixVI,EXACT MATCH
+mlp-44 OG,0.1750,True,AppendixVI,EXACT MATCH
+mlp-44 Cos,0.9450,True,AppendixVI,EXACT MATCH
+transformer-42 SG,-0.0206,True,AppendixVI,EXACT MATCH
+transformer-42 OG,0.1812,True,AppendixVI,EXACT MATCH
+transformer-42 Cos,0.9464,True,AppendixVI,EXACT MATCH
+transformer-43 SG,-0.0242,True,AppendixVI,EXACT MATCH
+transformer-43 OG,0.1848,True,AppendixVI,EXACT MATCH
+transformer-43 Cos,0.9459,True,AppendixVI,EXACT MATCH
+transformer-44 SG,-0.0314,True,AppendixVI,EXACT MATCH
+transformer-44 OG,0.1920,True,AppendixVI,EXACT MATCH
+transformer-44 Cos,0.9475,True,AppendixVI,EXACT MATCH
