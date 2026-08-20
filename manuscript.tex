@@ -167,16 +167,17 @@ The evaluation aggregates accuracy over the testing dataset, reporting the expec
 \subsection{Countdown Dataset}
 We operationalize our framework using the Countdown reasoning game. The task requires composing given integers using basic arithmetic operations to reach a target number. We generated 5,000 training trajectories, 500 validation, and 1,000 test problems.
 
-\subsection{Teacher Model}
-The frozen teacher model is \textbf{TinyLlama/TinyLlama-1.1B-Chat-v1.0}. The use of a small-scale model enables high-throughput trajectory extraction while retaining sufficient representational capacity for deductive reasoning tasks. 
+\subsection{Teacher Representation}
+We extract the hidden state from the final layer (`-1`) of the frozen teacher model, \textbf{TinyLlama/TinyLlama-1.1B-Chat-v1.0}. The use of a small-scale model enables high-throughput trajectory extraction while retaining sufficient representational capacity for deductive reasoning tasks.
 
-\subsection{Transition Architectures}
-We evaluated three transition architectures:
-\begin{itemize}
-    \item \textbf{Linear:} A direct linear projection.
-    \item \textbf{MLP:} A multi-layer perceptron.
-    \item \textbf{Transformer:} A self-attention block designed to model complex state-action synergies.
-\end{itemize}
+\subsection{Action Representation}
+Each action $a_t$ is represented by concatenating a 16-dimensional learned operator embedding with its two normalized numeric operands, yielding an 18-dimensional action vector. The identical action representation is used across all transition architectures.
+
+\subsection{Transition Dimensions}
+Linear, MLP, and Transformer transitions operate over the 2048-dimensional hidden states. The Linear transition uses a direct low-rank linear projection. The MLP uses a single 512-dimensional hidden layer with a ReLU activation. The Transformer uses a 2-layer, 8-head bottleneck self-attention configuration with $d_{model}=256$, matching the parameter count of the MLP baseline.
+
+\subsection{Probe}
+Probes use regularized logistic regression with the L-BFGS solver, $C=1.0$, and a maximum of 2000 iterations, trained on approximately 15,000 sampled state representations from the 5,000 training trajectories.
 
 \subsection{Seeds and Reproducibility}
 To ensure robustness, all architectures were trained and evaluated across three independent random initialization seeds: 42, 43, and 44. This produces $3 \times 3 = 9$ discrete experimental conditions. The canonical result artifacts and analysis pipeline are archived in the repository; model-checkpoint availability is documented separately due to storage constraints. The canonical repository preserving the software and experimental outputs for the experiments reported in this manuscript is available at \url{https://github.com/BIGREASONS/Latent_Planning} (Commit: \texttt{d86ac1556a191e2c70aa6be6260d6387073d665e}).
@@ -247,7 +248,7 @@ Linear vs Transformer & $0.539$ & $0.6402$ & $0.8355$ & $d=0.440$ \\
 
 \subsection{Follow-Up Validation with Larger Teachers}
 
-To assess whether the observed geometry--semantics mismatch was confined to the TinyLlama setting, we conducted follow-up experiments with three additional 7B-parameter teachers: Qwen 2.5, Mistral 7B, and DeepSeek-R1-Distill-Qwen-7B. These experiments were new training runs conducted after the primary Phase 3 study as a follow-up validation stage. They used an MLP transition and were not repeated across the three-seed, three-architecture Phase 3 protocol. Nevertheless, all three Countdown runs exhibited high cosine similarity ($>0.95$) alongside substantial corresponding Oracle Gaps and little or negative semantic advancement relative to the identity baseline. These results provide preliminary evidence that the observed geometry--semantics mismatch is not confined to the TinyLlama setting.
+To assess whether the observed geometry--semantics mismatch was confined to the TinyLlama setting, we conducted follow-up experiments with three additional 7B-parameter teachers: Qwen 2.5, Mistral 7B, and DeepSeek-R1-Distill-Qwen-7B. These experiments were new training runs conducted after the primary Phase 3 study as a follow-up validation stage. They used an MLP transition and were not repeated across the three-seed, three-architecture Phase 3 protocol. These experiments were designed as a cross-teacher robustness check rather than a second controlled factorial study. We therefore retain them as exploratory evidence and do not pool them with the primary Phase 3 statistics. Nevertheless, all three Countdown runs exhibited high cosine similarity ($>0.95$) alongside substantial corresponding Oracle Gaps and little or negative semantic advancement relative to the identity baseline. These results provide preliminary evidence that the observed geometry--semantics mismatch is not confined to the TinyLlama setting.
 
 \begin{table*}[t]
 \centering
