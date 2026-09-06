@@ -4,7 +4,7 @@
 
 This repository contains the official code, synthetic datasets, and analysis for the manuscript:
 **"When Geometry Misleads: Evaluating Semantic Fidelity in Latent Transition Models for LLM Reasoning"**
-([https://github.com/BIGREASONS/Latent_Planning](https://github.com/BIGREASONS/Latent_Planning))
+(https://zenodo.org/records/22546479)
 
 ## Project Overview
 Latent reasoning seeks to perform intermediate computation directly in the hidden-state space of a language model. This project evaluates whether geometric reconstruction metrics (like Cosine Similarity) adequately measure semantic fidelity in latent transition models. We introduce **LatentBench** to evaluate transition models through representation probing, generating explicit metrics for **Semantic Gain** and **Oracle Gap**.
