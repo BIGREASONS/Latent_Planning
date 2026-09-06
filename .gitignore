@@ -37,3 +37,29 @@ reports/scrubbed/
 
 pandoc-3.1.9/
 pandoc.zip
+
+# LaTeX build artifacts
+*.aux
+*.out
+*.fls
+*.fdb_latexmk
+missfont.log
+
+# Temporary editing scripts
+fix*.py
+remove*.py
+replace*.py
+update*.py
+move*.py
+generate_fig.py
+
+# Installers
+install-tinytex.*
+
+# Audit and temp folders
+audit/
+audit_temp*/
+quick_smoke/
+qwen_output*/
+notebook*/
+archived_baselines/

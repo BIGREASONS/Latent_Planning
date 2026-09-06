@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software or research, please cite it as below."
+authors:
+  - family-names: "Singh"
+    given-names: "Vaibhav"
+    email: "singhvaibhavip@gmail.com"
+title: "When Geometry Misleads: Evaluating Semantic Fidelity in Latent Transition Models for LLM Reasoning"
+version: "1.0.0"
+date-released: "2026-09-06"
+repository-code: "https://github.com/BIGREASONS/Latent_Planning"
+keywords:
+  - large language models
+  - latent planning
+  - interpretability
+  - representation geometry
+abstract: >
+  Latent reasoning seeks to perform intermediate computation directly in the hidden-state space of a language model, potentially reducing the need for repeated autoregressive decoding. However, evaluating whether a predicted latent state represents the correct next reasoning state remains challenging. Standard geometric objectives such as cosine similarity or mean-squared error measure proximity in representation space, but proximity alone does not establish semantic correctness.
+
+  We introduce LatentBench, a framework for evaluating semantic fidelity in latent transition models using a frozen language-model teacher, task-level representation probes, oracle transitions, and action-control ablations. The framework separates geometric reconstruction from semantic state advancement through Semantic Gain and Oracle Gap, while simultaneously tracking cosine similarity, mean-centered cosine similarity, mean-squared error, and probe accuracy.
+
+  We evaluate Linear, MLP, and Transformer transition models on the Countdown task using a frozen TinyLlama teacher, with three independent seeds per architecture. Across the nine audited experimental conditions, all three architectures exhibit consistently non-zero Oracle Gaps while maintaining high raw cosine similarity. Mean Oracle Gap is 0.1944 for Linear, 0.1789 for MLP, and 0.1860 for Transformer. All nine audited runs produced negative True Action Semantic Gain, indicating limited semantic advancement despite strong geometric proximity to the current representation.
+
+  A Welch's ANOVA does not detect a statistically significant architecture effect on Oracle Gap (F(2,3.59)=1.160, p=0.409). Pairwise Welch tests with Holm correction likewise do not reach statistical significance. Because only three seeds are available per architecture, these results should be interpreted as inconclusive with respect to fine-grained architectural differences rather than as evidence of equivalence.
+
+  Our results demonstrate that, in the evaluated Countdown and TinyLlama setting, geometric similarity alone can substantially overstate the semantic fidelity of latent transitions. The findings motivate evaluation protocols that explicitly measure task-relevant semantic state preservation rather than relying solely on representation-level reconstruction metrics.

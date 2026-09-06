@@ -9,17 +9,77 @@
 \usepackage{booktabs}
 \usepackage{float}
 \usepackage[hidelinks]{hyperref}
+\usepackage{url}
 
+% ---------------------------------------------------------------------------
+% TYPOGRAPHIC REFINEMENTS
+% ---------------------------------------------------------------------------
+
+% Define a restrained gray for secondary text
+\definecolor{metadatagray}{gray}{0.35}
+
+% 1. CUSTOM MAKETITLE: professional preprint front matter
+\makeatletter
+\def\@maketitle{%
+  \newpage
+  \null
+  % --- Preprint header (understated, right-aligned) ---
+  \begingroup
+    \raggedleft
+    \small\color{metadatagray}%
+    Preprint\enspace$\cdot$\enspace September 2026\par
+  \endgroup
+  \vskip 1.2em%
+  % --- Title ---
+  {\centering
+   \fontsize{16}{19}\selectfont\bfseries\@title\par}
+  \vskip 1.0em%
+  % --- Author block ---
+  {\centering
+   \large\bfseries Vaibhav Singh\par
+   \vskip 0.3em%
+   \small\normalfont Independent Researcher\par
+   \vskip 0.15em%
+   \small\normalfont\color{metadatagray}%
+   \href{mailto:singhvaibhavip@gmail.com}{singhvaibhavip@gmail.com}\par
+  }%
+  \vskip 1.0em%
+  % --- Thin rule separating author block from abstract ---
+  {\centering\rule{0.4\textwidth}{0.4pt}\par}%
+  \vskip 0.8em%
+}
+\makeatother
+
+% 2. CAPTION: slightly smaller caption text
+\makeatletter
+\long\def\@makecaption#1#2{%
+  \vskip\abovecaptionskip
+  \sbox\@tempboxa{\small #1: #2}%
+  \ifdim \wd\@tempboxa >\hsize
+    {\small #1: #2\par}
+  \else
+    \global\@minipagefalse
+    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \vskip\belowcaptionskip}
+\makeatother
+
+% 3. ABSTRACT: keep IEEEtran default rendering (bold/italic is standard for IEEE conference)
+
+% 4. BIBLIOGRAPHY: compact spacing
+\let\OLDthebibliography\thebibliography
+\renewcommand\thebibliography[1]{%
+  \OLDthebibliography{#1}%
+  \setlength{\parskip}{0pt}%
+  \setlength{\itemsep}{0pt plus 0.3ex}%
+}
+
+% ---------------------------------------------------------------------------
 \begin{document}
 
-\title{When Geometry Misleads: Evaluating Semantic Fidelity in Latent Transition Models for LLM Reasoning\\
+\title{When Geometry Misleads: Evaluating Semantic Fidelity\\in Latent Transition Models for LLM Reasoning}
 
-}
-
-\author{\IEEEauthorblockN{Vaibhav Singh}
-\IEEEauthorblockA{Email: singhvaibhavip@gmail.com \\
-}
-}
+\author{}% Author block is rendered manually inside \@maketitle
 
 \maketitle
 
@@ -74,13 +134,15 @@ World models typically utilize a Recurrent State Space Model (RSSM) to forecast 
 \subsection{JEPA and Predictive Representation Learning}
 Joint-Embedding Predictive Architectures (JEPAs) \cite{lecun2022path, assran2023self, bardes2024vjepa} optimize a predictor network to map a latent representation of context to the latent representation of a target, minimizing geometric prediction loss (e.g., $L_2$ distance). JEPA-style objectives emphasize prediction in representation space; such geometric prediction objectives do not, by themselves, establish task-specific semantic correctness. Our work isolates semantic preservation independently of geometric reconstruction.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Evaluation-Dimension Comparison}
 \label{tab:related_work}
-\begin{tabular}{lccccc}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-Work & Pred. & Probe & Oracle & Controls & Geo/Sem. Sep \\
+Work & Pred. & Probe & Oracle & Ctrl. & Geo/Sem. \\
 \midrule
 World models \cite{hafner2020dream} & \checkmark & --- & --- & \checkmark & --- \\
 JEPA-family \cite{lecun2022path} & \checkmark & --- & --- & varies & --- \\
@@ -89,7 +151,7 @@ Probing \cite{alain2017understanding} & --- & \checkmark & --- & --- & --- \\
 \textbf{LatentBench} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} & \textbf{\checkmark} \\
 \bottomrule
 \end{tabular}
-\vspace{2.5ex}
+\vskip 0.5ex
 \begin{minipage}{0.95\columnwidth}
 \centering
 \footnotesize \textit{Note:} The table compares the evaluation dimensions explicitly used in the cited works; absence of a check mark does not imply that a work cannot support the corresponding analysis.
@@ -168,7 +230,7 @@ The evaluation aggregates accuracy over the testing dataset, reporting the expec
 We operationalize our framework using the Countdown reasoning game. The task requires composing given integers using basic arithmetic operations to reach a target number. We generated 5,000 training trajectories, 500 validation, and 1,000 test problems.
 
 \subsection{Teacher Representation}
-We extract the hidden state from the final layer (`-1`) of the frozen teacher model, \textbf{TinyLlama/TinyLlama-1.1B-Chat-v1.0}. The use of a small-scale model enables high-throughput trajectory extraction while retaining sufficient representational capacity for deductive reasoning tasks.
+We extract the hidden state from the final layer (`-1') of the frozen teacher model, \textbf{TinyLlama/TinyLlama-1.1B-Chat-v1.0}. The use of a small-scale model enables high-throughput trajectory extraction while retaining sufficient representational capacity for deductive reasoning tasks.
 
 \subsection{Action Representation}
 Each action $a_t$ is represented by concatenating a 16-dimensional learned operator embedding with its two normalized numeric operands, yielding an 18-dimensional action vector. The identical action representation is used across all transition architectures.
@@ -206,7 +268,7 @@ The linear probes successfully decode task-critical information from the frozen 
 \subsection{Architecture-Level Results}
 Table \ref{tab:main_results} reports the performance of the three transition architectures across the audited Phase 3 study. The metrics demonstrate a consistently non-zero Oracle Gap across all evaluated models.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Primary Results (Mean $\pm$ 95\% CI Half-Width)}
 \label{tab:main_results}
@@ -230,18 +292,20 @@ The results provide little evidence that the tested transitions derive semantic 
 \subsection{Statistical Analysis}
 We formally tested whether the architecture choice systematically affects the Oracle Gap. The comprehensive statistical tests are reported in Table \ref{tab:stats}. A Welch's ANOVA yields $F(2,3.59)=1.160$ with $p=0.409$, which did not provide statistically significant evidence of differences in mean Oracle Gap across architectures. Holm-adjusted pairwise Welch $t$-tests likewise show no statistically significant differences. To verify whether initialization variance masked architecture effects, we additionally conducted a paired sensitivity analysis blocking by random seed; this approach also yielded no statistically significant architecture-level differences ($F(2,4)=0.604$, $p=0.590$). Although large effect sizes were observed (e.g., Cohen's $d = -1.210$ for MLP vs Transformer), these effect-size estimates are exploratory and should be interpreted cautiously given the very small number of independent seeds. The study does not provide statistically significant evidence of architecture-level differences, and the low seed count ($n=3$) makes the result inconclusive regarding architectural equivalence.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
-\caption{Statistical Tests (Welch ANOVA and Pairwise t-tests)}
+\caption{Statistical Tests (Welch ANOVA and Pairwise $t$-tests)}
 \label{tab:stats}
-\begin{tabular}{lrrrr}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Comparison / Test & Statistic & $p$ & Corrected $p$ & Effect \\
+Comparison / Test & Stat. & $p$ & Corr.\ $p$ & Effect \\
 \midrule
-Welch ANOVA & $F=1.160$ & $0.409$ & --- & --- \\
-MLP vs Transformer & $-1.481$ & $0.2137$ & $0.6411$ & $d=-1.210$ \\
-Linear vs MLP & $0.989$ & $0.4178$ & $0.8355$ & $d=0.808$ \\
-Linear vs Transformer & $0.539$ & $0.6402$ & $0.8355$ & $d=0.440$ \\
+Welch ANOVA & $F{=}1.160$ & $0.409$ & --- & --- \\
+MLP vs Trans. & $-1.481$ & $0.2137$ & $0.6411$ & $d{=}{-}1.210$ \\
+Linear vs MLP & $0.989$ & $0.4178$ & $0.8355$ & $d{=}0.808$ \\
+Linear vs Trans. & $0.539$ & $0.6402$ & $0.8355$ & $d{=}0.440$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -288,11 +352,13 @@ We hypothesize a phenomenon we term \textit{representational smoothing}. The tra
 \subsection{Implications for Latent Planning Evaluation}
 The empirical mismatch demonstrates that latent planning models must be evaluated against semantic references (like the Oracle Gap). Relying on representation-level objective functions risks selecting models that are transitions dominated by representation-space inertia rather than capable deductive reasoners.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Summary of Claims and Evidence}
 \label{tab:claims}
-\begin{tabular}{p{4.2cm}ll}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{3.6cm}p{1.6cm}l@{}}
 \toprule
 \textbf{Claim} & \textbf{Evidence} & \textbf{Status} \\
 \midrule
@@ -329,11 +395,13 @@ We introduced a decoupled evaluation framework for assessing semantic fidelity i
 \section*{Appendix: Phase 3 Raw Results}
 Table \ref{tab:raw_results_app} presents the complete set of raw metrics obtained across all nine audited experimental runs in Phase 3. Table \ref{tab:action_controls_app} presents the corresponding action-control ablation results for Semantic Gain.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Complete Phase 3 Run-Level Metrics}
 \label{tab:raw_results_app}
-\begin{tabular}{lrrrrr}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrr@{}}
 \toprule
 Arch. & Seed & True SG & Oracle SG & Oracle Gap & Cosine \\
 \midrule
@@ -350,11 +418,13 @@ Trans. & 44 & -0.0314 & 0.1606 & 0.1920 & 0.9475 \\
 \end{tabular}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Phase 3 Action-Control Semantic Gain}
 \label{tab:action_controls_app}
-\begin{tabular}{lrrrrr}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrr@{}}
 \toprule
 Arch. & Seed & True SG & Shuffled SG & Constant SG & Blind SG \\
 \midrule
