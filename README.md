@@ -1,6 +1,6 @@
 # LatentBench: When Geometry Misleads
 
-**DOI**: To be assigned upon v1.0 release.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22546288.svg)](https://doi.org/10.5281/zenodo.22546288)
 
 This repository contains the official code, synthetic datasets, and analysis for the manuscript:
 **"When Geometry Misleads: Evaluating Semantic Fidelity in Latent Transition Models for LLM Reasoning"**
