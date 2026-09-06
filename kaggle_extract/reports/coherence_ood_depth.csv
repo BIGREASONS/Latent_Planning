@@ -1,4 +1,0 @@
-depth,mse,cosine_similarity,operator_accuracy,teacher_operator_accuracy,state_probe_accuracy,teacher_state_probe_accuracy,dist_probe_accuracy,teacher_dist_probe_accuracy,reach_probe_accuracy,teacher_reach_probe_accuracy,identity_mse,identity_cosine_similarity,identity_operator_accuracy,identity_state_probe_accuracy,identity_dist_probe_accuracy,identity_reach_probe_accuracy,n_samples,dynamics_gain
-1,4.214659070968628,0.42468110769987105,0.3,0.55,0.4875,0.4625,,,,,4.816793441772461,0.3612270176410675,0.35,0.4875,,,20,1.142866685220508
-2,4.49568817615509,0.4216482013463974,0.45,0.35,0.3875,0.5375,,,,,4.937246465682984,0.3352715693414211,0.45,0.4125,,,20,1.0982181753329552
-3,5.12155249118805,0.4318017616868019,0.25,0.2,0.2625,0.45,,,,,4.854572606086731,0.3499379426240921,0.35,0.2875,,,20,0.9478712977050076

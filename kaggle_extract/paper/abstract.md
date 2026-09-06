@@ -1,7 +1,0 @@
-# Abstract (Draft)
-
-Modern large language models demonstrate impressive problem-solving capabilities when generating intermediate reasoning steps, a paradigm known as Chain-of-Thought. While this behavior mimics human planning, a critical open question is whether the internal representations of autoregressive models actually encode abstract, manipulable states that govern transition dynamics, or if they merely rely on sequential, positional heuristics. 
-
-In this work, we present a framework for isolating and analyzing the latent dynamics of frozen language models during symbolic reasoning tasks. We extract trajectories of hidden states aligned to discrete reasoning steps and train auxiliary non-linear transition models to predict future states given current actions. Across multiple model scales (from 1B up to 7B parameters) and domains (Countdown, Game of 24), we find a consistent negative result: the representations fail to support accurate, actionable state transitions. The auxiliary models perform no better than naive baselines that ignore the action entirely. Furthermore, latent rollouts rapidly collapse by step 3. 
-
-Our findings indicate that standard next-token pre-training does not naturally induce reusable "planning states" or Markovian world models. Instead, reasoning representations are heavily path-dependent and positionally entangled. We conclude that true latent planning likely requires explicit architectural or training interventions, rather than relying on emergent properties of autoregressive generation.

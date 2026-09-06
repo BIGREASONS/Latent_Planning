@@ -62,4 +62,11 @@ audit_temp*/
 quick_smoke/
 qwen_output*/
 notebook*/
-archived_baselines/
+
+kaggle_extract/
+kaggle_download/
+latentbench-v1.0/
+
+manuscript.md
+manuscript_tmp.tex
+test.md
