@@ -1,9 +1,9 @@
-# LatentBench: When Geometry Misleads
+# LatentBench: Beyond Geometric Similarity
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22546288.svg)](https://doi.org/10.5281/zenodo.22546288)
 
 This repository contains the official code, synthetic datasets, and analysis for the manuscript:
-**"When Geometry Misleads: Evaluating Semantic Fidelity in Latent Transition Models for LLM Reasoning"**
+**"Beyond Geometric Similarity: Measuring Semantic Fidelity in Latent LLM Transitions"**
 ([https://github.com/BIGREASONS/Latent_Planning](https://github.com/BIGREASONS/Latent_Planning))
 
 ## Project Overview

@@ -4,7 +4,7 @@ authors:
   - family-names: "Singh"
     given-names: "Vaibhav"
     email: "singhvaibhavip@gmail.com"
-title: "When Geometry Misleads: Evaluating Semantic Fidelity in Latent Transition Models for LLM Reasoning"
+title: "Beyond Geometric Similarity: Measuring Semantic Fidelity in Latent LLM Transitions"
 version: "1.0.1"
 doi: "10.5281/zenodo.22546288"
 date-released: "2026-09-06"
